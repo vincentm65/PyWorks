@@ -112,25 +112,25 @@ if __name__ == "__main__":
 **Purpose:** Main application window with toolbar and dock areas.
 
 **What to code:**
-- [ ] Create `MainWindow` class inheriting from `QMainWindow`
-- [ ] Set window title: "PyWorks - Visual Scripting Editor"
-- [ ] Set initial window size: 1280x720
-- [ ] Create central widget (will be the canvas)
-- [ ] Create toolbar with placeholder buttons
-- [ ] Create dockable code editor widget
-- [ ] Set up dock widget layout
+- [x ] Create `MainWindow` class inheriting from `QMainWindow`
+- [ x] Set window title: "PyWorks - Visual Scripting Editor"
+- [ x] Set initial window size: 1280x720
+- [x ] Create central widget (will be the canvas)
+- [ x] Create toolbar with placeholder buttons
+- [x ] Create dockable code editor widget
+- [ x] Set up dock widget layout
 
 **Components to implement:**
 
 **Toolbar:**
 - [ ] "Reload Script" button (disabled for now - just a placeholder)
-- [ ] "Run" button (disabled for now)
-- [ ] Separator
-- [ ] "Save" button (for saving layout)
+- [ x] "Run" button (disabled for now)
+- [ x] Separator
+- [ x] "Save" button (for saving layout)
 
 **Dock Widgets:**
-- [ ] Left dock: Code Editor (QPlainTextEdit for now)
-- [ ] Right dock: Will be for Project Explorer (Phase 2+)
+- [x ] Left dock: Code Editor (QPlainTextEdit for now)
+- [x ] Right dock: Will be for Project Explorer (Phase 2+)
 - [ ] Bottom dock: Will be for Output Console (Phase 2+)
 
 **Template structure:**

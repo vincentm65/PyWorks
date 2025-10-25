@@ -1,5 +1,4 @@
 import sys
-from PyQt6 import uic
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene
 from PyQt6.QtGui import QPainter
 
@@ -7,6 +6,7 @@ from PyQt6.QtGui import QPainter
 class CanvasGraphicsView(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
+
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.BoundingRectViewportUpdate)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
