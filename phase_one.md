@@ -131,7 +131,7 @@ if __name__ == "__main__":
 **Dock Widgets:**
 - [x ] Left dock: Code Editor (QPlainTextEdit for now)
 - [x ] Right dock: Will be for Project Explorer (Phase 2+)
-- [ ] Bottom dock: Will be for Output Console (Phase 2+)
+- [ x] Bottom dock: Will be for Output Console (Phase 2+)
 
 **Template structure:**
 ```python

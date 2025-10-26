@@ -15,20 +15,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PyWorks")
         self.setGeometry(500, 300, 1200, 800)
 
-        # Create a menubar
-        file_menu = self.menuBar().addMenu("File")
-        file_menu.addAction("New", self.new_file)
-        file_menu.addAction("Open", self.open_file)
-        file_menu.addAction("Save", self.save)
-        file_menu.addAction("Save As", self.save_as)
-        file_menu.addSeparator()
-        file_menu.addAction("Exit", self.close)
+        self._create_menubar()
+        self._create_toolbar()
+        self._create_widgets()
 
-        edit_menu = self.menuBar().addMenu("Edit")
-        edit_menu.addAction("Undo", self.undo)
-        edit_menu.addAction("Redo", self.redo)
-        
-        # Create a toolbar
+    def _create_toolbar(self):
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
 
@@ -37,48 +28,53 @@ class MainWindow(QMainWindow):
             action.triggered.connect(slots)
             toolbar.addAction(action)
 
+    def _create_menubar(self):
+        file_menu = self.menuBar().addMenu("File")
+        for name, slots in [
+            ("New", self.new_file),
+            ("Open", self.open_file),
+            ("Save", self.save),
+            ("Save As", self.save_as)
+        ]:
+            file_menu.addAction(name, slots)
+        file_menu.addSeparator()
+        file_menu.addAction("Exit", self.close)
+
+        edit_menu = self.menuBar().addMenu("Edit")
+        for name, slots in [
+            ("Undo", self.undo),
+            ("Redo", self.redo)
+        ]:
+            edit_menu.addAction(name, slots)
+        
+ 
+    def _create_widgets(self):
         # Central Widget Layout
         self.canvas = CanvasGraphicsView()
         self.setCentralWidget(self.canvas)
 
-        # Add custom docked widgets
-        self.node_list = NodeListWidget()
-        node_dock = QDockWidget("Node List", self)
-        node_dock.setWidget(self.node_list)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, node_dock)
+        # Dockable Widgets
+        for widget, title, area in [
+            (NodeListWidget(), "Node List", Qt.DockWidgetArea.LeftDockWidgetArea),
+            (EditorWidget(), "Editor", Qt.DockWidgetArea.RightDockWidgetArea),
+            (EditorWidget(), "Console", Qt.DockWidgetArea.BottomDockWidgetArea),
+        ]:
+            dock = QDockWidget(title, self)
+            dock.setWidget(widget)
+            self.addDockWidget(area, dock)
 
-        self.editor = EditorWidget()
-        editor_dock = QDockWidget("Editor", self)
-        editor_dock.setWidget(self.editor)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, editor_dock)
 
-        self.console = EditorWidget()
-        console_dock = QDockWidget("Console", self)
-        console_dock.setWidget(self.console)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock)
-        
- 
-    def new_file(self): 
-        print("New file")
-    def open_file(self): 
-        print("Open file")
-    def save(self):
-        print("Save")
-    def save_as(self): 
-        print("Save As")
-    def undo(self): 
-        print("Undo")
-    def redo(self): 
-        print("Redo")
+    # Action Slots
+    def new_file(self): print("New file")
+    def open_file(self): print("Open file")
+    def save(self): print("Save")
+    def save_as(self): print("Save As")
+    def undo(self): print("Undo")
+    def redo(self): print("Redo")
+    def run(self): print("Run")
+    def pause(self): print("Pause")
+    def stop(self): print("Stop")
 
-    def run(self): 
-        print("Run")
-    def pause(self): 
-        print("Pause")
-    def stop(self): 
-        print("Stop")
-
-    
 
 def main():
     app = QApplication(sys.argv)
