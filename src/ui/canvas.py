@@ -1,7 +1,9 @@
 import sys
 from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsItem
 from PyQt6.QtGui import QPainter, QColor, QPainterPath, QPen
+
+from nodes.node_item import NodeItem
 
 
 class CanvasGraphicsView(QGraphicsView):
@@ -15,6 +17,7 @@ class CanvasGraphicsView(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setAcceptDrops(True)
 
         # Attach the custom scene
         self.scene = CanvasGraphicsScene(self)
@@ -55,6 +58,22 @@ class CanvasGraphicsView(QGraphicsView):
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRoundedRect(adjusted_rect, 10, 10)
 
+    def dragEnterEvent(self, event):
+        event.acceptProposedAction()
+    
+    def dragMoveEvent(self, event):
+        event.acceptProposedAction()
+    
+    def dropEvent(self, event):
+        node_name = event.mimeData().text()
+        scene_pos = self.mapToScene(event.position().toPoint())
+
+        scene_pos_x = round(scene_pos.x() / 20) * 20
+        scene_pos_y = round(scene_pos.y() / 20) * 20
+
+        node = NodeItem(node_name, scene_pos_x, scene_pos_y)
+        self.scene.addItem(node)
+        event.acceptProposedAction()
 
 class CanvasGraphicsScene(QGraphicsScene):
     def __init__(self, parent=None, grid_size=20, radius=10):
@@ -63,12 +82,9 @@ class CanvasGraphicsScene(QGraphicsScene):
         self.gridSize = grid_size
         self.radius = radius
 
-        if not self.views()
-            
-
     def drawBackground(self, painter, rect):
         path = QPainterPath()
-        path.addRect(rect, self.radius, self.radius)
+        path.addRoundedRect(rect, self.radius, self.radius)
         painter.setClipPath(path)
 
         painter.fillRect(rect, self.backgroundBrush())
@@ -86,3 +102,11 @@ class CanvasGraphicsScene(QGraphicsScene):
     def dropEvent(self, event):
         event.setDropAction(Qt.DropAction.CopyAction)
         event.accept()
+
+    def keyPressEvent(self, event):
+        # Backspace or delete for removing nodes
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            for item in self.selectedItems():
+                self.removeItem(item)
+        else:
+            super().keyPressEvent(event)
