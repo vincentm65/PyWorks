@@ -7,7 +7,7 @@ Build the basic application shell and visual components. By the end of this phas
 
 ## 📊 Current Progress Summary
 
-**Status:** Steps 1-4 Complete ✅ | Steps 5-10 Remaining 🔨
+**Status:** Steps 1-5 Complete ✅ | Steps 6-10 Remaining 🔨
 
 ### What's Working Now:
 - ✅ PyQt6 application launches with main window
@@ -16,9 +16,14 @@ Build the basic application shell and visual components. By the end of this phas
 - ✅ **Custom dot matrix grid background** (dots instead of lines)
 - ✅ Three dockable panels: Node List (left), Editor (right), Console (bottom)
 - ✅ Proper rendering with antialiasing
+- ✅ **Draggable NodeItem** with grid snapping, selection highlighting
+- ✅ **Drag-and-drop** from Node List to Canvas
+- ✅ **Node deletion** with Delete/Backspace keys
 
 ### Recent Commits:
 ```
+3a8ca2f - Drag and drop complete, deletion complete
+5bbab87 - working on drag and drop
 4d96700 - Added zoom and dot matrix
 13da5aa - UI with movable containers
 93fe125 - Set up basic QT ui
@@ -30,20 +35,22 @@ PyWorks/
 ├── src/
 │   ├── main.py              ✅ Main window + application entry
 │   ├── ui/
-│   │   ├── canvas.py        ✅ Canvas view + scene with grid
+│   │   ├── canvas.py        ✅ Canvas view + scene with grid, drag-drop
 │   │   ├── editor.py        ✅ Code editor widget
-│   │   ├── node_list.py     ✅ Node list widget
-│   │   └── console.py       ✅ Console widget
-│   ├── nodes/               🔨 NEXT: Implement NodeItem here
+│   │   ├── node_list.py     ✅ Node list widget with drag support
+│   │   └── console.py       ✅ Console widget (has minor bug on line 11)
+│   ├── nodes/
+│   │   ├── node_item.py     ✅ NodeItem implementation
+│   │   └── connection_item.py  🔨 NEXT: Connection graphics
 │   └── utils/               🔨 Later: Layout manager
 └── phase_one.md
 ```
 
 ### 🎯 What's Next:
-**Step 5: Node Graphics Item** - Create visual representation of workflow nodes
-- This is the foundation for the visual workflow system
-- You'll implement NodeItem class with draggable nodes
-- After nodes, you'll add connections between them
+**Step 6: Connection Graphics Item** - Create visual connections between nodes
+- This will allow you to draw edges between nodes
+- Implement curved bezier paths for smooth connections
+- Handle updates when nodes move
 
 ---
 
@@ -291,21 +298,21 @@ class CanvasView(QGraphicsView):
 
 ---
 
-### Step 5: Node Graphics Item 🔨 NEXT STEP
-
-> **This is your next priority!** Once you implement NodeItem, you'll be able to visualize workflow nodes on your canvas and start building the visual programming experience.
+### Step 5: Node Graphics Item ✅ COMPLETED
 
 #### 5.1 Create `src/nodes/node_item.py`
 **Purpose:** Visual representation of a workflow node (function).
 
 **What to code:**
-- [ ] Create `NodeItem` class (inherits `QGraphicsItem`)
-- [ ] Implement bounding rectangle
-- [ ] Implement paint method (draw the node)
-- [ ] Add function name label
-- [ ] Add connection anchors (top and bottom)
-- [ ] Make node draggable
-- [ ] Add visual states (normal, selected, hover)
+- [x] Create `NodeItem` class (inherits `QGraphicsItem`)
+- [x] Implement bounding rectangle
+- [x] Implement paint method (draw the node)
+- [x] Add function name label
+- [x] Make node draggable
+- [x] Add visual states (normal, selected)
+- [x] Grid snapping via itemChange()
+- [ ] Add connection anchors (top and bottom) - **For Step 6**
+- [ ] Add hover effects - **For Step 10**
 
 **Visual design suggestions:**
 ```
@@ -381,15 +388,13 @@ class NodeItem(QGraphicsItem):
 - Error: Light red (#E57373)
 - Blocked: Light orange (#FFB74D)
 
-**Test:** Create a node manually and add to scene in `main.py` for testing:
-```python
-# In main_window.py, after creating scene:
-from nodes.node_item import NodeItem
-test_node = NodeItem("test_function", 0, 0)
-self.scene.addItem(test_node)
-```
+**Test:** ✅ Working! Nodes can be dragged from Node List and dropped onto the canvas. They're draggable, selectable, and snap to the 20px grid.
 
-You should see a draggable node on the canvas.
+**Implementation notes:**
+- Your NodeItem implementation includes grid snapping in `itemChange()`
+- Selection highlighting with blue border (#4285F4)
+- The node is centered at drop position (subtracts width/2 and height/2)
+- Status color system is prepared with `get_status_color()` method
 
 ---
 
@@ -742,16 +747,17 @@ When you complete Phase 1, you should have:
 - [x] Main window with toolbar and dock widgets
 - [x] Canvas that supports zoom and pan
 - [x] Code editor panel (basic QTextEdit)
-- [ ] Draggable node items with visual states (Step 5 - NEXT)
+- [x] Draggable node items with visual states (Step 5) ✅
+- [x] Ability to delete nodes (Step 10 - partial) ✅
+- [x] Drag-and-drop node creation from Node List ✅
 - [ ] Connection items with curved paths (Step 6)
 - [ ] Interactive connection drawing (drag from node to node) (Step 7)
-- [ ] Ability to manually add nodes (Step 9)
-- [ ] Ability to delete nodes and connections (Step 10)
+- [ ] Ability to manually add nodes via dialog (Step 9)
 - [ ] Save layout to `.layout.json` (Step 8)
 - [ ] Load layout from `.layout.json` (Step 8)
-- [ ] Visual feedback (hover, selection, status) (Step 10)
+- [ ] Visual feedback (hover effects, status bar) (Step 10)
 
-**Current Progress: 4/12 items complete (33%)**
+**Current Progress: 7/13 items complete (54%)**
 
 ---
 
@@ -863,6 +869,13 @@ You've already added some nice touches to the base implementation:
 
 4. **Comprehensive Menu System** - Added both File and Edit menus with placeholders for future functionality, showing good forward planning.
 
+5. **Drag-and-Drop Node Creation** - Implemented a complete drag-and-drop system where users can drag nodes from the Node List palette onto the canvas. This includes:
+   - QMimeData for transferring node names
+   - Grid-snapped drop positioning
+   - Automatic centering of nodes at drop location
+
+6. **Dual Grid Snapping** - Smart grid snapping happens in two places: during drag operations (`itemChange()`) and during drop operations (`dropEvent()`), ensuring nodes always align to the 20px grid.
+
 These additions demonstrate solid Qt fundamentals and attention to UX details! 🎯
 
-Good luck with Phase 1! 🚀
+**You're now 54% through Phase 1!** Next up: Connection graphics for linking nodes together. 🚀
