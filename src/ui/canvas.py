@@ -1,9 +1,9 @@
-import sys
 from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsView, QGraphicsScene, QGraphicsItem
-from PyQt6.QtGui import QPainter, QColor, QPainterPath, QPen
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene
+from PyQt6.QtGui import QPainter, QColor, QPainterPath, QPen, QTransform
 
-from nodes.node_item import NodeItem
+from ui.nodes.node_item import NodeItem
+from ui.nodes.port import PortItem
 
 
 class CanvasGraphicsView(QGraphicsView):
@@ -81,6 +81,9 @@ class CanvasGraphicsScene(QGraphicsScene):
         self.setBackgroundBrush(QColor("#222"))
         self.gridSize = grid_size
         self.radius = radius
+        self.temp_connection = None
+        self.connection_start_port = None
+        self.is_drawing_connection = False
 
     def drawBackground(self, painter, rect):
         path = QPainterPath()
@@ -110,3 +113,28 @@ class CanvasGraphicsScene(QGraphicsScene):
                 self.removeItem(item)
         else:
             super().keyPressEvent(event)
+
+    def mousePressEvent(self, event):
+        item = self.itemAt(event.scenePos(), QTransform())
+
+        if isinstance(item, PortItem):
+            self.is_drawing_connection = True
+            self.connection_start_port = item
+
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self.is_drawing_connection and self.temp_connection:
+
+            pass
+
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self.is_drawing_connection:
+            item = self.itemAt(event.scenePos(), QTransform())
+            if isinstance(item, PortItem):
+                if self.connection_start_port.can_connect_to(item):
+                    pass
+        return super().mouseReleaseEvent(event)

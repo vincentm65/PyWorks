@@ -1,16 +1,14 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QStyle
-from PyQt6.QtCore import QRectF, QMimeData, QPointF
-from PyQt6.QtGui import QPainter, QColor, QDrag, QPen, QBrush, QPolygonF
+
+from PyQt6.QtWidgets import QGraphicsItem
+from PyQt6.QtCore import QRectF, QPointF
+from PyQt6.QtGui import QColor, QPen, QBrush, QPolygonF
 
 class PortItem(QGraphicsItem):
-    def __init__(self, parent=None):
+    def __init__(self, port_type, port_direction, parent_node, parent=None):
         super().__init__(parent)
-        self.port_type = "DATA"
-        self.port_direction = "IN"
-        self.port_color = QPen(QColor("#111"))
-        self.parent_node = None
-        self.position = QPointF(0, 0)
+        self.port_type = port_type
+        self.port_direction = port_direction
+        self.parent_node = parent_node
 
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
@@ -29,7 +27,7 @@ class PortItem(QGraphicsItem):
             painter.setBrush(QBrush(self.port_color.color()))
             
         elif self.port_type == "FLOW":
-            self.port_color = QPen(QColor("#4CAF60"))
+            self.port_color = QPen(QColor("#4CAF50"))
             painter.setPen(self.port_color)
             painter.setBrush(QBrush(self.port_color.color()))
 
@@ -48,7 +46,7 @@ class PortItem(QGraphicsItem):
 
     def get_center_pos(self):
         radius = 5
-        self.center_pos = self.scenePos() + QPointF(radius, radius)
+        self.center_pos = self.scenePos()
         return self.center_pos
 
     def can_connect_to(self, other_port):
