@@ -3,13 +3,16 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QStyle
 from PyQt6.QtCore import QRectF, QMimeData, QPointF
 from PyQt6.QtGui import QPainter, QColor, QDrag, QPen, QBrush
 
+from nodes.port import PortItem
+
 class NodeItem(QGraphicsItem):
     def __init__(self, function_name, x, y, parent=None):
         super().__init__(parent)
         # Node properties
-        self.width = 180
-        self.height = 100
+        self.width = 140
+        self.height = 80
         self.title = function_name
+        self.add_ports()
 
         # Center the node at the given position
         self.setPos(x - self.width / 2, y - self.height / 2)
@@ -55,4 +58,27 @@ class NodeItem(QGraphicsItem):
             return QPointF(scene_pos_x, scene_pos_y)
         return super().itemChange(change, value)
 
-        
+    def add_ports(self):
+        input_data = PortItem(self)
+        input_data.port_type = "DATA"
+        input_data.port_direction = "IN"
+        input_data.setPos(0, 30)
+        input_data.parent_node = self
+
+        output_data = PortItem(self)
+        output_data.port_type = "DATA"
+        output_data.port_direction = "OUT"
+        output_data.setPos(self.width, 30)
+        output_data.parent_node = self
+
+        input_flow = PortItem(self)
+        input_flow.port_type = "FLOW"
+        input_flow.port_direction = "IN"
+        input_flow.setPos(0, 50)
+        input_flow.parent_node = self
+
+        output_flow = PortItem(self)
+        output_flow.port_type = "FLOW"
+        output_flow.port_direction = "OUT"
+        output_flow.setPos(self.width, 50)
+        output_flow.parent_node = self
