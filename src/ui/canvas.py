@@ -1,9 +1,10 @@
 from PyQt6.QtCore import Qt, QRectF
-from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem
 from PyQt6.QtGui import QPainter, QColor, QPainterPath, QPen, QTransform
 
 from ui.nodes.node_item import NodeItem
 from ui.nodes.port import PortItem
+from ui.nodes.connection_item import ConnectionBridge
 
 
 class CanvasGraphicsView(QGraphicsView):
@@ -84,6 +85,7 @@ class CanvasGraphicsScene(QGraphicsScene):
         self.temp_connection = None
         self.connection_start_port = None
         self.is_drawing_connection = False
+        self.connections = []
 
     def drawBackground(self, painter, rect):
         path = QPainterPath()
@@ -125,16 +127,39 @@ class CanvasGraphicsScene(QGraphicsScene):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.is_drawing_connection and self.temp_connection:
+        if self.is_drawing_connection:
+            if self.temp_connection is None:
+                self.temp_connection = QGraphicsLineItem()
+                self.temp_connection.setPen(QPen(QColor("#FFF"), 2, Qt.PenStyle.DashLine))
+                self.addItem(self.temp_connection)
 
-            pass
+            start_pos = self.connection_start_port.get_center_pos()
+            end_pos = event.scenePos()
 
+            self.temp_connection.setLine(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.is_drawing_connection:
-            item = self.itemAt(event.scenePos(), QTransform())
-            if isinstance(item, PortItem):
-                if self.connection_start_port.can_connect_to(item):
-                    pass
+            target_port = None
+            for item in self.items(event.scenePos()):
+                if isinstance(item, PortItem):
+                    target_port = item
+                    break
+
+            if target_port:
+                can_connect = self.connection_start_port.can_connect_to(target_port)
+
+                if can_connect:
+                    connection = ConnectionBridge(self.connection_start_port, target_port)
+                    self.addItem(connection)
+                    self.connections.append(connection)
+
+            if self.temp_connection:
+                self.removeItem(self.temp_connection)
+                self.temp_connection = None
+
+            self.is_drawing_connection = False
+            self.connection_start_port = None
+
         return super().mouseReleaseEvent(event)

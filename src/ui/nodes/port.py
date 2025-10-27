@@ -15,21 +15,21 @@ class PortItem(QGraphicsItem):
         )
     
     def boundingRect(self):
-        radius = 5
+        radius = 6
         return QRectF(-radius, -radius, radius*2, radius*2)
     
     def paint(self, painter, option, widget):
-        radius = 5
+        radius = 6
         
         if self.port_type == "DATA":
             self.port_color = QPen(QColor("#2196F3"))
-            painter.setPen(self.port_color)
-            painter.setBrush(QBrush(self.port_color.color()))
-            
+            border_color = QColor("#1565C0")
         elif self.port_type == "FLOW":
             self.port_color = QPen(QColor("#4CAF50"))
-            painter.setPen(self.port_color)
-            painter.setBrush(QBrush(self.port_color.color()))
+            border_color = QColor("#2E7D32")
+            
+        painter.setPen(QPen(border_color, 1.5))
+        painter.setBrush(QBrush(self.port_color.color()))
 
         if self.port_direction == "OUT":
             triangle = QPolygonF([
@@ -37,7 +37,6 @@ class PortItem(QGraphicsItem):
                 QPointF(-radius, -radius), 
                 QPointF(-radius, radius)
             ])
-
             painter.drawPolygon(triangle)
         elif self.port_direction == "IN":
             painter.drawEllipse(self.boundingRect())

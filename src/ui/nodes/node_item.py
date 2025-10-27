@@ -32,9 +32,9 @@ class NodeItem(QGraphicsItem):
         radius = 10
 
         if option.state & QStyle.StateFlag.State_Selected:
-            border_pen = QPen(QColor("#4285F4"), 2)
+            border_pen = QPen(QColor("#4285F4"), 1.5)
         else: 
-            border_pen= QPen(QColor("#444"))
+            border_pen= QPen(QColor("#888"), 1.5)
 
         painter.setBrush(QColor("#444"))
         painter.setPen(border_pen)
@@ -55,7 +55,15 @@ class NodeItem(QGraphicsItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             scene_pos_x = round(value.x() / 20) * 20
             scene_pos_y = round(value.y() / 20) * 20
-            return QPointF(scene_pos_x, scene_pos_y)
+            new_pos = QPointF(scene_pos_x, scene_pos_y)
+
+            if self.scene() and hasattr(self.scene(), 'connections'):
+                for connections in self.scene().connections:
+                    if connections.source_port in self.ports or connections.target_port in self.ports:
+                        connections.update_path()
+
+            return new_pos
+
         return super().itemChange(change, value)
 
     def add_ports(self):
