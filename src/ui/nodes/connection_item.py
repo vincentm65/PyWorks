@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QGraphicsPathItem  # Changed import
+from PyQt6.QtWidgets import QGraphicsPathItem, QStyle
 from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtGui import QPen, QColor, QPainterPath
 
@@ -10,6 +10,9 @@ class ConnectionBridge(QGraphicsPathItem):
         super().__init__(parent)
         self.source_port = source_port
         self.target_port = target_port
+        self.setAcceptHoverEvents(True)
+        self.is_hovered = False
+        self.setFlag(QGraphicsPathItem.GraphicsItemFlag.ItemIsSelectable, True)
         
         if source_port.port_type == "FLOW":
             pen = QPen(QColor(110, 110, 110), 2)
@@ -23,6 +26,28 @@ class ConnectionBridge(QGraphicsPathItem):
         self.setZValue(-1)
 
         self.update_path()
+
+    def paint(self, painter, option, widget):
+        is_selected = option.state & QStyle.StateFlag.State_Selected
+        if self.is_hovered or is_selected:
+            if self.source_port.port_type == "FLOW":
+                glow_color = QColor(150, 150, 150, 100)
+            else:
+                glow_color = QColor(180, 100, 255, 120)
+            if is_selected:
+                glow_color = QColor(255, 255, 255, 60)
+
+            glow_pen = QPen(glow_color, 6)
+            glow_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            glow_pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+
+            painter.setPen(glow_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(self.path())
+            
+        option.state &= ~QStyle.StateFlag.State_Selected
+
+        super().paint(painter, option, widget)
 
     def update_path(self,):
         path = self.create_orthoganal_path()
@@ -56,3 +81,13 @@ class ConnectionBridge(QGraphicsPathItem):
         path.lineTo(end)
 
         return path
+    
+    def hoverEnterEvent(self, event):
+        self.is_hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        self.is_hovered = False
+        self.update()
+        super().hoverLeaveEvent(event)

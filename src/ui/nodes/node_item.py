@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QStyle
-from PyQt6.QtCore import QRectF, QMimeData, QPointF
+from PyQt6.QtCore import QRectF, QMimeData, QPointF, Qt
 from PyQt6.QtGui import QPainter, QColor, QDrag, QPen, QBrush
 
 from ui.nodes.port import PortItem
@@ -13,6 +13,8 @@ class NodeItem(QGraphicsItem):
         self.height = 80
         self.title = function_name
         self.add_ports()
+        self.setAcceptHoverEvents(True)
+        self.is_hovered = False
 
         # Center the node at the given position
         self.setPos(x - self.width / 2, y - self.height / 2)
@@ -23,15 +25,33 @@ class NodeItem(QGraphicsItem):
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
     
-    # Define the bounding rect
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height)
     
-    # Paint the node
     def paint(self, painter, option, widget):
         radius = 10
 
-        if option.state & QStyle.StateFlag.State_Selected:
+        is_selected = option.state & QStyle.StateFlag.State_Selected
+
+        if self.is_hovered:
+            # Determine glow color
+            if is_selected:
+                glow_color = QColor(66, 133, 244, 80)
+            else:
+                glow_color = QColor(255, 255, 255, 40)
+
+            glow_size = 4
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(glow_color)
+            painter.drawRoundedRect(
+                        -glow_size, -glow_size,
+                        self.width + glow_size * 2,
+                        self.height + glow_size * 2,
+                        radius + glow_size,
+                        radius + glow_size
+                    )
+            
+        if is_selected:
             border_pen = QPen(QColor("#4285F4"), 1.5)
         else: 
             border_pen= QPen(QColor("#888"), 1.5)
@@ -41,6 +61,9 @@ class NodeItem(QGraphicsItem):
         painter.drawRoundedRect(0, 0, self.width, self.height, radius, radius)
         painter.setPen(QColor("#fff"))
         painter.drawText(10, 20, self.title)
+
+
+
         
     def get_status_color(self):
         colors = {
@@ -50,7 +73,6 @@ class NodeItem(QGraphicsItem):
         }
         return colors.get(getattr(self, '_status', 'idle'), "#444")
     
-    # Check if position changed to re-snap to grid
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             scene_pos_x = round(value.x() / 20) * 20
@@ -58,12 +80,20 @@ class NodeItem(QGraphicsItem):
             new_pos = QPointF(scene_pos_x, scene_pos_y)
 
             if self.scene() and hasattr(self.scene(), 'connections'):
-                for connections in self.scene().connections:
-                    if connections.source_port in self.ports or connections.target_port in self.ports:
-                        connections.update_path()
-
+                for connection in self.scene().connections:
+                    if connection.source_port in self.ports or connection.target_port in self.ports:
+                        connection.update_path()
             return new_pos
+        elif change == QGraphicsItem.GraphicsItemChange.ItemSceneChange:
+            if value is None and self.scene():
+                connections_to_remove = []
+                for connection in self.scene().connections:
+                    if connection.source_port in self.ports or connection.target_port in self.ports:
+                        connections_to_remove.append(connection)
 
+                for connection in connections_to_remove:
+                    self.scene().removeItem(connection)
+                    self.scene().connections.remove(connection)
         return super().itemChange(change, value)
 
     def add_ports(self):
@@ -80,3 +110,13 @@ class NodeItem(QGraphicsItem):
         self.output_flow.setPos(self.width, 50)
 
         self.ports = [self.input_data, self.output_data, self.input_flow, self.output_flow]
+
+    def hoverEnterEvent(self, event):
+        self.is_hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        self.is_hovered = False
+        self.update()
+        super().hoverLeaveEvent(event)
