@@ -2,11 +2,94 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Claude Reponse Rule
+## Claude Response Rule
 - I am learning to code, I need help mostly with syntax but understand basic concepts like functions and loops. I struggle with classes.
-- Never modify the code for me unless explicity asked to.
+- Never modify the code for me unless explicitly asked to.
 - If I implement something my self, feel free to show me a better way of doing it so I can compare it to my own.
 - If I am stuck, feel free to give me hints or lines of code entirely. I still want to write it myself.
+
+## Effective Explanation Pattern (IMPORTANT)
+
+When explaining code solutions, especially when the user is stuck or lost, use this **line-by-line breakdown pattern**. This approach has been proven effective for this learner.
+
+### Pattern Structure:
+
+1. **Mental Model / Analogy** (Start here!)
+   - Explain what you're doing in real-world terms
+   - Example: "Think of scene.items() as a box of mixed items. Your job is to pick out only the nodes."
+
+2. **Understand the Data** (Before any code)
+   - Show what data structures you're working with
+   - Use concrete examples: `[NodeItem(...), PortItem(...), NodeItem(...)]`
+   - Explain what each piece represents
+
+3. **Show the Pattern** (With execution trace)
+   - Break down the code logic step-by-step
+   - Trace through with example data: "First loop: item is NodeItem → True → print title"
+   - Show what happens at each iteration
+
+4. **Explain Language Constructs** (Why, not just what)
+   - `isinstance(item, NodeItem)` - "Checks if item is a NodeItem object. Returns True or False."
+   - Dictionary indexing - "layout_data['nodes']['Node1'] stores Node1's position directly"
+   - `for` loops and conditionals with concrete trace
+
+5. **Complete Implementation** (With detailed comments)
+   - Provide full working code
+   - Include line-by-line comments explaining each step
+   - Mark TODO sections if breaking into multiple tasks
+
+6. **Testing & Q&A** (Close the loop)
+   - Explain how to test the implementation
+   - Show expected output/results
+   - Answer "Why" questions about design choices
+   - Address common misconceptions
+
+### When to Use This Pattern:
+
+- User says "I'm stuck" or "I'm lost"
+- Explaining complex iterations/filtering patterns
+- Teaching fundamental programming concepts they struggle with (like classes, loops with conditions)
+- Building on previous explanations that didn't quite land
+
+### Why It Works:
+
+This pattern **scaffolds complexity layer-by-layer** rather than showing the whole solution at once. It mirrors how experts naturally break down problems: understand the data → see the pattern → apply the transformation → test. It's like learning music by mastering one measure at a time, not playing the whole song at once.
+
+### Example Template:
+
+```
+[Mental Model]
+"Think of scene.items() as a box of mixed items..."
+
+[Show the Data]
+scene.items() returns:
+[NodeItem(...), PortItem(...), NodeItem(...), ...]
+
+[Trace the Pattern]
+for item in scene.items():
+  First loop: item is NodeItem → isinstance returns True → process it
+  Second loop: item is PortItem → isinstance returns False → skip
+
+[Explain Constructs]
+isinstance(item, NodeItem) checks if item is a NodeItem
+layout_data["nodes"][node_title] = {...} stores by title
+
+[Complete Code with Comments]
+def save_layout(self, scene, file_path):
+    import json
+
+    # Step 1: Create the structure to hold our data
+    layout_data = {"nodes": {}, "connections": []}
+
+    # Step 2: Loop through ALL items in the scene
+    for item in scene.items():
+        # Step 3: Filter - only process NodeItems
+        if isinstance(item, NodeItem):
+            # Extract and store...
+
+[Testing]
+Run app → Add nodes → Call save → Check .json file
+```
 
 ## Project Overview
 
