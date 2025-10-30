@@ -2,7 +2,7 @@ import sys
 from PyQt6.QtWidgets import QDockWidget
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QWidget, QGraphicsView, QToolBar, QFileDialog, QInputDialog
-from PyQt6.QtGui import QAction 
+from PyQt6.QtGui import QAction, QShortcut, QKeySequence
 from pathlib import Path
 
 from ui.node_list import NodeListWidget
@@ -22,6 +22,11 @@ class MainWindow(QMainWindow):
         self._create_widgets()
 
         self.layout_manager = LayoutManager()
+        self.current_file = None
+
+        # Bind Shortcuts
+        QShortcut(QKeySequence("Ctrl+S"), self, activated=self.save)
+        QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_file)
 
 
     def _create_toolbar(self):
@@ -72,21 +77,23 @@ class MainWindow(QMainWindow):
     # Action Slots
     def new_file(self): print("New file")
     def open_file(self):
-        # 1. Open File Dialog
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Layout", "", "JSON Files (*.json)")
 
-        # 2. Load user selected layout to the canvas
         if file_path:
             # Clear the canvas first
             self.canvas.scene.clear()
             self.canvas.scene.connections = []
             success = self.layout_manager.load_layout(self.canvas.scene, file_path)
+
+            self.current_file = Path(file_path) if success else None
+
             if success:
+                self.setWindowTitle(f"PyWorks - {self.current_file.stem}")
                 print("Layout Loaded")
             else:
                 print("Failed to load layout")
 
-    def save(self):
+    def save_as(self):
         name, ok = QInputDialog.getText(self, "Save Layout", "Enter layout name:")
         
         if not ok or not name:
@@ -102,12 +109,32 @@ class MainWindow(QMainWindow):
             str(file_path)
         )
 
+        self.current_file = file_path if success else None
+
         if success:
+            if self.current_file:
+                self.setWindowTitle(f"PyWorks - {name}")
+            else:
+                self.setWindowTitle("PyWorks")
             print("Layout Saved")
         else:
             print("Failed to save layout")
         
-    def save_as(self): print("Save As")
+    def save(self):
+        if self.current_file:
+            success = self.layout_manager.save_layout(
+                self.canvas.scene,
+                self.current_file.stem,
+                str(self.current_file)
+            )
+            if success:
+                self.setWindowTitle(f"PyWorks - {self.current_file.stem}")
+                print("Layout Saved")
+            else:
+                print("Failed to save layout")
+        else:
+            self.save_as()
+
     def undo(self): print("Undo")
     def redo(self): print("Redo")
     def run(self): print("Run")
