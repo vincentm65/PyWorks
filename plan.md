@@ -333,6 +333,58 @@ def filter_image(inputs, global_state):
 
 ---
 
+### Phase 1.5: Project Foundation
+
+**Goal:** Establish project-based workspace management to enable workflow execution.
+
+**Rationale:** Phase 2 requires knowing "what code to run" and "where dependencies are." This phase implements the minimum viable project system to provide that context.
+
+**Tasks:**
+
+1. **Project Structure Module** (`src/utils/project_manager.py`):
+   - `create_project(name, location)`: Creates project folder with:
+     - `workflow.py` (template with two example `@node` functions showing data passing)
+     - `requirements.txt` (empty)
+     - `.layout.json` (empty structure)
+   - `validate_project(path)`: Validates project folder structure
+
+2. **MainWindow Project State Tracking**:
+   - Add `current_project_path` attribute to track open project
+   - `set_current_project(path)`: Opens project, loads files, updates UI
+   - `close_current_project()`: Closes project, clears workspace
+   - Update window title to show project name
+
+3. **File Menu Restructure**:
+   - **New Project** (Ctrl+N): Dialog for name + location, creates project
+   - **Open Project** (Ctrl+O): Folder picker, validates and opens project
+   - **Close Project**: Closes current project
+   - **Save** (Ctrl+S): Saves `.layout.json` and `workflow.py` to project folder
+   - Remove: Standalone layout file operations
+
+4. **Editor Integration**:
+   - Load `workflow.py` into editor when project opens
+   - Save editor content to `workflow.py` on Ctrl+S
+   - Disable editor when no project open
+
+5. **Layout Manager Updates**:
+   - Modify `save_layout()` to save to project's `.layout.json`
+   - Modify `load_layout()` to load from project's `.layout.json`
+
+6. **First Launch Experience**:
+   - Show "New Project" dialog automatically on startup if no project open
+   - Welcome message and easy project creation
+
+7. **Toolbar State Management**:
+   - Disable Run/Pause/Stop buttons when no project open
+   - Add tooltips explaining why disabled
+
+8. **Cleanup**:
+   - Remove deprecated `workspace/layouts/` code
+
+**Deliverable:** A project-based workspace system where users create self-contained project folders with `workflow.py`, `.layout.json`, and `requirements.txt`. Ready for Phase 2 execution.
+
+---
+
 ### Phase 2: Basic Workflow Execution
 
 **Goal:** Create a proof-of-concept for running a hardcoded workflow.

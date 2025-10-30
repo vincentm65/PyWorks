@@ -11,14 +11,13 @@ class LayoutManager():
     def __init__(self, parent = None):
         pass
 
-    def save_layout(self, scene, name, file_path):
+    def save_layout(self, scene, file_path):
         # Get all node and bridge data
         layout_data = {
-            "name" : {},
+            "version": "1.0",
             "nodes" : {},
             "connections": []
         }
-        layout_data["name"] = name
 
         for item in scene.items():
             if isinstance(item, NodeItem):
