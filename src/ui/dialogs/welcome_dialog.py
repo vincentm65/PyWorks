@@ -68,9 +68,9 @@ class WelcomeDialog(QDialog):
         self.new_btn.setMinimumHeight(60)
         self.new_btn.setStyleSheet("""
             QPushButton {
-                background-color: #4285F4;
+                background-color: transparent;
                 color: white;
-                border: none;
+                border: 2px solid #4285F4;
                 border-radius: 8px;
                 font-size: 14px;
                 font-weight: bold;
@@ -91,9 +91,9 @@ class WelcomeDialog(QDialog):
         self.open_btn.setMinimumHeight(60)
         self.open_btn.setStyleSheet("""
             QPushButton {
-                background-color: #34A853;
+                background-color: transparent;
                 color: white;
-                border: none;
+                border: 2px solid #34A853;
                 border-radius: 8px;
                 font-size: 14px;
                 font-weight: bold;

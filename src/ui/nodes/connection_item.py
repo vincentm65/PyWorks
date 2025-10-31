@@ -8,6 +8,11 @@ from ui.nodes.node_item import NodeItem
 class ConnectionBridge(QGraphicsPathItem):
     def __init__(self, source_port, target_port, parent = None):
         super().__init__(parent)
+
+        # Normalize ports
+        if source_port.port_direction == "IN":
+          source_port, target_port = target_port, source_port
+
         self.source_port = source_port
         self.target_port = target_port
         self.setAcceptHoverEvents(True)
@@ -64,9 +69,19 @@ class ConnectionBridge(QGraphicsPathItem):
             path.lineTo(end)
             return path
 
-        # Otherwise, use curved orthogonal routing
-        mid_x = (start.x() + end.x()) / 2
         radius = 10
+        base_mid_x = (start.x() + end.x()) / 2
+        # Otherwise, use curved orthogonal routing, based on node position and port type
+        if self.source_port.port_type == "FLOW":
+            if self.source_port.scenePos().y() < self.target_port.scenePos().y():
+                mid_x = base_mid_x - 10
+            else:
+                mid_x = base_mid_x + 10
+        elif self.source_port.port_type == "DATA":
+            if self.source_port.scenePos().y() < self.target_port.scenePos().y():
+                mid_x = base_mid_x + 10
+            else:
+                mid_x = base_mid_x - 10
 
         going_right = end.x() > start.x()
         going_down = end.y() > start.y()
@@ -79,6 +94,12 @@ class ConnectionBridge(QGraphicsPathItem):
         path.lineTo(mid_x, end.y() - v_radius)
         path.quadTo(QPointF(mid_x, end.y()), QPointF(mid_x + h_radius, end.y()))
         path.lineTo(end)
+
+        print(f"Port type: {self.source_port.port_type}")
+        print(f"Source Y: {self.source_port.scenePos().y()}, Target Y: {self.target_port.scenePos().y()}")
+        print(f"Going down? {self.source_port.scenePos().y() < self.target_port.scenePos().y()}")
+        print(f"Calculated mid_x: {mid_x}")
+        print("---")
 
         return path
     

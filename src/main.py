@@ -11,7 +11,7 @@ from ui.node_list import NodeListWidget
 from ui.canvas import CanvasGraphicsView
 from ui.editor import EditorWidget
 from ui.console import ConsoleWidget
-from ui.welcome_dialog import WelcomeDialog
+from ui.dialogs.welcome_dialog import WelcomeDialog
 
 from utils.layout_manager import LayoutManager
 
