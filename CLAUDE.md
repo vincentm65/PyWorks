@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Claude Response Rule
 - I am learning to code, I need help mostly with syntax but understand basic concepts like functions and loops. I struggle with classes.
 - Never modify the code for me unless explicitly asked to.
-- If I implement something my self, feel free to show me a better way of doing it so I can compare it to my own.
+- If I implement something myself, feel free to show me a better way of doing it so I can compare it to my own.
 - If I am stuck, feel free to give me hints or lines of code entirely. I still want to write it myself.
 
 ## Effective Explanation Pattern (IMPORTANT)
@@ -51,45 +51,14 @@ When explaining code solutions, especially when the user is stuck or lost, use t
 - Teaching fundamental programming concepts they struggle with (like classes, loops with conditions)
 - Building on previous explanations that didn't quite land
 
-### Why It Works:
+## Running the Application
 
-This pattern **scaffolds complexity layer-by-layer** rather than showing the whole solution at once. It mirrors how experts naturally break down problems: understand the data → see the pattern → apply the transformation → test. It's like learning music by mastering one measure at a time, not playing the whole song at once.
-
-### Example Template:
-
+```bash
+# From project root
+python src/main.py
 ```
-[Mental Model]
-"Think of scene.items() as a box of mixed items..."
 
-[Show the Data]
-scene.items() returns:
-[NodeItem(...), PortItem(...), NodeItem(...), ...]
-
-[Trace the Pattern]
-for item in scene.items():
-  First loop: item is NodeItem → isinstance returns True → process it
-  Second loop: item is PortItem → isinstance returns False → skip
-
-[Explain Constructs]
-isinstance(item, NodeItem) checks if item is a NodeItem
-layout_data["nodes"][node_title] = {...} stores by title
-
-[Complete Code with Comments]
-def save_layout(self, scene, file_path):
-    import json
-
-    # Step 1: Create the structure to hold our data
-    layout_data = {"nodes": {}, "connections": []}
-
-    # Step 2: Loop through ALL items in the scene
-    for item in scene.items():
-        # Step 3: Filter - only process NodeItems
-        if isinstance(item, NodeItem):
-            # Extract and store...
-
-[Testing]
-Run app → Add nodes → Call save → Check .json file
-```
+The application launches with a welcome dialog prompting you to create a new project or open an existing one. Each project is a self-contained folder containing your workflow code, layout, and dependencies.
 
 ## Project Overview
 
@@ -99,38 +68,156 @@ Run app → Add nodes → Call save → Check .json file
 
 ## Current Development Status
 
-**Phase:** Phase 1 - Core UI and Canvas (54% complete)
+**Phase:** Phase 1 - Core UI and Canvas (85% complete)
 
 **What's Working:**
 - ✅ PyQt6 application with main window, menubar, toolbar
+- ✅ Project management system (new, open, save, save-as with validation)
+- ✅ Welcome dialog on launch with project creation/selection
 - ✅ Canvas with zoom (wheel), pan (drag), and custom dot matrix grid
 - ✅ Three dockable panels: Node List (left), Editor (right), Console (bottom)
 - ✅ Drag-and-drop node creation from Node List to Canvas
-- ✅ NodeItem implementation with selection highlighting and grid snapping
+- ✅ NodeItem implementation with 4 ports (input_data, output_data, input_flow, output_flow)
+- ✅ Port-based connection system with type and direction validation
+- ✅ ConnectionBridge with orthogonal curved routing
+- ✅ Interactive connection drawing (drag from port to port)
 - ✅ Node deletion with Delete/Backspace keys
 - ✅ Dual grid snapping (drag + drop operations)
+- ✅ Layout save/load system (.layout.json with full graph serialization)
+- ✅ Connection storage and reconstruction
+- 🔨 Step 9: Manual node creation dialog (TODO)
+- 🔨 Step 10: Final visual polish (minor refinements)
 
-**Next Steps (from phase_one.md):**
-- Step 6: Create ConnectionItem for visual connections between nodes 🔨 NEXT
-- Step 7: Implement interactive connection drawing (drag from node to node)
-- Step 8: Layout save/load system (.layout.json)
-- Step 9: Manual node creation dialog
-- Step 10: Visual polish (hover effects, status bar)
-
-## Running the Application
-
-```bash
-# From project root
-python src/main.py
-```
-
-**Note:** This project uses PyQt6, which should be installed in your environment. There is no requirements.txt yet, but PyQt6>=6.6.0 is required.
+**Next Steps:**
+- Step 9: Add UI dialog for manual node creation (alternative to drag-drop)
+- Step 10: Visual polish (status bar, connection glow effects fine-tuning)
+- Step 11: Remove debug prints from connection_item.py
 
 ## Architecture
 
-### Data Flow Model (Planned)
+### Project Structure
 
-The execution model revolves around two key concepts:
+```
+PyWorks/
+├── src/
+│   ├── main.py              # Application entry + MainWindow
+│   ├── ui/
+│   │   ├── canvas.py        # CanvasGraphicsView + CanvasGraphicsScene
+│   │   ├── editor.py        # EditorWidget (code editor)
+│   │   ├── node_list.py     # NodeListWidget (draggable node palette)
+│   │   ├── console.py       # ConsoleTextView (output console)
+│   │   ├── dialogs/
+│   │   │   └── welcome_dialog.py    # Project creation/selection dialog
+│   │   └── nodes/
+│   │       ├── node_item.py         # NodeItem (QGraphicsItem with 4 ports)
+│   │       ├── port.py              # Port class (IN/OUT, DATA/FLOW types)
+│   │       └── connection_item.py   # ConnectionBridge (edges with routing)
+│   └── utils/
+│       ├── layout_manager.py        # Save/load .layout.json system
+│       └── project_manager.py       # Project creation, validation, folder structure
+├── plan.md                  # Complete technical specification
+└── phase_one.md            # Phase 1 implementation guide
+```
+
+### Key Architectural Concepts
+
+#### 1. **Node Identification System**
+Each node instance gets a unique composite key combining function name with position:
+```
+key = f"{title}_{x}_{y}"
+```
+This allows multiple nodes with the same function name to coexist without collision.
+
+#### 2. **Port Architecture**
+Each node has exactly 4 ports fixed in position:
+- **input_data** (IN, DATA) - Blue circle, left side, y=30, receives values
+- **output_data** (OUT, DATA) - Blue triangle, right side, y=30, provides values
+- **input_flow** (IN, FLOW) - Green circle, left side, y=50, receives execution signal
+- **output_flow** (OUT, FLOW) - Green triangle, right side, y=50, provides execution signal
+
+**Visual Design:**
+- IN ports: Circles (◯) on left
+- OUT ports: Triangles (▶) on right
+- DATA ports: Blue (#4285F4)
+- FLOW ports: Green (#2D7A3E)
+
+**Connection Rules:**
+- Connections always go OUT → IN (automatic normalization in ConnectionBridge)
+- Only same types can connect (DATA to DATA, FLOW to FLOW)
+- No self-connections allowed
+- No duplicate connections between same ports
+
+#### 3. **Connection System (ConnectionBridge)**
+Implements edge visualization and interactive connection drawing:
+- **Orthogonal Routing**: Paths use horizontal-vertical-horizontal pattern with curved corners
+- **Smart Midpoint Calculation**: Adjusts routing based on port type and vertical positions
+- **Color Coding**:
+  - FLOW connections: Gray (#6E6E6E)
+  - DATA connections: Purple (#8A2BE2)
+- **Interactive Drawing**: Drag from one port to another; temporary dashed line shows path
+- **Visual Feedback**:
+  - Hover glow effects (white when normal, blue when selected)
+  - Automatic path updates when nodes move
+  - Connection cleanup when nodes are deleted
+
+**Implementation Location**: `src/ui/nodes/connection_item.py`
+
+#### 4. **Project Management System**
+Each project is a self-contained folder:
+```
+my_project/
+├── workflow.py         # Python code with @node decorated functions
+├── requirements.txt    # Dependencies (one per line)
+└── .layout.json        # Visual layout (positions and connections)
+```
+
+**Workflow**:
+1. User selects "New Project" or "Open Project" from welcome dialog
+2. ProjectManager validates folder structure and creates missing files
+3. Layout loads from .layout.json and reconstructs canvas state
+4. Editor displays workflow.py code
+5. User edits code; changes auto-save
+6. Ctrl+S saves layout changes back to .layout.json
+
+**Validation**: Projects must contain valid workflow.py and .layout.json files.
+
+#### 5. **Layout Save/Load System**
+Serializes entire canvas state to `.layout.json`:
+
+```json
+{
+  "version": "1.0",
+  "nodes": {
+    "GetData_100_200": {
+      "title": "GetData",
+      "x": 100,
+      "y": 200
+    }
+  },
+  "connections": [
+    {
+      "from_node": "GetData_100_200",
+      "from_port": "output_data",
+      "from_direction": "OUT",
+      "from_type": "DATA",
+      "to_node": "ProcessData_350_200",
+      "to_port": "input_data",
+      "to_direction": "IN",
+      "to_type": "DATA"
+    }
+  ]
+}
+```
+
+**Key Features**:
+- Stores complete port metadata (type + direction) for validation on load
+- Handles missing nodes gracefully (skips orphaned connections)
+- Stores node uniqueness via composite keys
+- Preserves exact visual layout including all connection paths
+
+### Data Flow Model
+
+Two key concepts drive execution:
 
 **1. `global_state` Dictionary:**
 - Shared across all nodes in a workflow
@@ -154,89 +241,28 @@ def process_data(inputs, global_state):
     return {"processed_data": result}
 ```
 
-### Project Structure
+## Canvas System Details
 
-```
-PyWorks/
-├── src/
-│   ├── main.py              # Application entry + MainWindow
-│   ├── ui/
-│   │   ├── canvas.py        # CanvasGraphicsView + CanvasGraphicsScene
-│   │   ├── editor.py        # EditorWidget (code editor)
-│   │   ├── node_list.py     # NodeListWidget (draggable node palette)
-│   │   └── console.py       # ConsoleTextView (output console)
-│   ├── nodes/
-│   │   ├── node_item.py     # NodeItem (QGraphicsItem for visual nodes)
-│   │   └── connection_item.py  # [TODO] ConnectionItem for edges
-│   └── utils/               # [TODO] Layout manager, execution engine
-├── plan.md                  # Complete technical specification
-└── phase_one.md            # Phase 1 implementation guide
-```
+### Grid and Coordinate System
+- **Scene coordinates**: -5000 to 5000 (large virtual canvas)
+- **Grid size**: 20px intervals
+- **Zoom limits**: 0.1x to 5.0x
+- **Snap behavior**: All node positions snap to nearest 20px grid point during drag or drop
 
-### Key Files
+### Interactive Connection Drawing
+Located in `src/ui/canvas.py` (lines 119-164):
+1. User clicks and drags from an output port
+2. Temporary dashed line follows mouse cursor
+3. When hovering over a valid input port (matching type), port highlights
+4. Release mouse to create connection (or click to cancel)
+5. ConnectionBridge handles validation, path routing, and storage
 
-**src/main.py:1-86**
-- `MainWindow`: Main application window with PyQt6
-- Creates toolbar (Run, Pause, Stop), menubar (File, Edit)
-- Sets up three dock widgets for Node List, Editor, Console
-- Canvas as central widget
-
-**src/ui/canvas.py:9-112**
-- `CanvasGraphicsView`: Graphics view with zoom/pan
-- `CanvasGraphicsScene`: Scene with dot matrix grid background, drag-drop support
-- Handles node deletion (Delete/Backspace keys)
-- Grid snapping (20px intervals)
-
-**src/nodes/node_item.py:6-58**
-- `NodeItem`: Visual representation of a workflow node
-- Draggable, selectable, with grid snapping
-- Shows function name as title
-- Selection highlights with blue border (#4285F4)
-
-**src/ui/node_list.py:6-21**
-- Drag-enabled list widget with placeholder nodes (Node1, Node2, Node3)
-- Nodes can be dragged onto canvas to create instances
-
-## Layout System (Planned)
-
-The `.layout.json` file stores visual layout separately from code:
-
-```json
-{
-  "version": "1.0",
-  "nodes": {
-    "get_data": {"x": 100, "y": 200},
-    "process_data": {"x": 350, "y": 200}
-  },
-  "connections": [
-    {"from": "get_data", "to": "process_data"}
-  ]
-}
-```
-
-**Synchronization Strategy:**
-- **Python code (`workflow.py`)**: Source of truth for what nodes exist
-- **`.layout.json`**: Source of truth for positions and connections
-- **Manual sync**: User clicks "Reload Script" button to sync code → canvas
-- **Auto-save**: Canvas changes (positions, connections) auto-save to `.layout.json`
-
-## Execution Model (Future Phases)
-
-**Graph Execution:**
-- DAG (Directed Acyclic Graph) only - cycles are forbidden
-- Topological sort determines execution order
-- Each workflow runs in isolated subprocess using project-specific venv
-- Node discovery via `importlib` + `inspect` (checks for `_is_workflow_node` attribute)
-
-**Error Handling:**
-- Failed nodes stop downstream dependencies
-- Independent branches continue execution
-- Visual states: pending, running, completed, error, blocked
-
-**Isolation:**
-- Each project has its own `.venv/` directory
-- User code runs in separate process (subprocess module)
-- Communication via stdout/stderr pipes
+### Node Movement and Updates
+When a node is dragged:
+1. `NodeItem.itemChange()` snaps position to grid
+2. All connected ConnectionBridge items are notified
+3. Each bridge recalculates its orthogonal path
+4. Scene updates automatically
 
 ## PyQt6 Conventions Used
 
@@ -252,87 +278,144 @@ The `.layout.json` file stores visual layout separately from code:
 - Node background: #444
 - Node border: #444 (normal), #4285F4 (selected)
 - Text: #fff (white)
+- Selection glow: #4285F4 (blue)
+- DATA ports: #4285F4 (blue)
+- FLOW ports: #2D7A3E (green)
+- Connections: #6E6E6E (FLOW), #8A2BE2 (DATA)
 
 **Drag and Drop:**
 - Node List → Canvas uses QMimeData with text (node name)
 - Canvas accepts drops and creates NodeItem at drop position (grid-snapped)
+- Port hover highlights during connection drawing
 
 ## Important Implementation Details
 
-### Grid Snapping
-All node positions snap to 20px grid intervals. This happens in two places:
-1. `NodeItem.itemChange()` - during manual dragging
-2. `CanvasGraphicsView.dropEvent()` - when dropping from node list
+### Port Implementation (src/ui/nodes/port.py)
+Each port is a circular/triangular visual element with:
+- Position relative to parent node
+- Type (DATA or FLOW) and direction (IN or OUT)
+- Connection list (multiple connections allowed to same port)
+- Visual feedback during hover/selection
+- `can_connect_to()` validation method checking type matching and direction
 
-### Canvas Navigation
-- **Zoom**: Ctrl+Wheel (not implemented yet, but zoom works with just wheel)
-- **Pan**: Click and drag (ScrollHandDrag mode)
-- **Delete**: Select nodes and press Delete or Backspace
+### Connection Updates on Node Movement
+When a node moves, `itemChange()` signals all connections:
+```python
+# In NodeItem
+def itemChange(self, change, value):
+    if change == QGraphicsItem.ItemPositionHasChanged:
+        # Update all connected bridges
+        for connection in self.connections:
+            connection.update_path()
+```
 
-### Node Visual States (Planned)
-- Pending: #E0E0E0 (light gray)
-- Running: #64B5F6 (light blue)
-- Completed: #81C784 (light green)
-- Error: #E57373 (light red)
-- Blocked: #FFB74D (light orange)
+### Grid Snapping Logic
+Snapping happens in two places for consistency:
+1. **During drag**: `NodeItem.itemChange()` rounds position to grid
+2. **During drop**: `CanvasGraphicsView.dropEvent()` snaps drop position
 
-## Known Issues
+```python
+snapped_x = round(pos.x() / 20) * 20
+snapped_y = round(pos.y() / 20) * 20
+```
 
-**src/ui/console.py:11**
-- Bug: `self.console.write()` should be `self.append()` - console widget is not yet functional
+## Known Issues and TODOs
 
-**Missing Features (Phase 1):**
-- No connection drawing between nodes yet
-- No save/load for layouts
-- No connection anchors on nodes
-- No hover effects or visual feedback
-- Node List has hardcoded placeholder nodes instead of loading from workflow.py
+**Code Quality**:
+- Debug print statements in `connection_item.py` lines 98-102 should be removed
+- Two `node_item.py` files exist (`src/nodes/` and `src/ui/nodes/`) - cleanup needed, currently using `src/ui/nodes/`
+
+**Missing Features (Phase 1 Remaining)**:
+- Step 9: No manual node creation dialog (only drag-drop from palette)
+- Step 10: Connection glow effects could be fine-tuned
+- No undo/redo system (menu items are placeholders)
+- Node List still has hardcoded placeholder nodes instead of loading from workflow.py (deferred to Phase 2)
+
+**Future Phases**:
+- Phase 2: Dynamic node loading (parse Python files for @node decorator)
+- Phase 3: Virtual environment and dependency management
+- Phase 4: Graph execution engine with subprocess isolation
+- Phase 5: Integration, polish, real-time execution feedback
 
 ## Development Workflow
 
-1. **Adding Visual Features**: Work primarily in `src/ui/` and `src/nodes/`
-2. **Testing Changes**: Run `python src/main.py` and interact with the GUI
-3. **Next Milestone**: Complete Phase 1 by implementing ConnectionItem and interactive connection drawing
-4. **Reference Documentation**: See `plan.md` for full technical spec, `phase_one.md` for step-by-step guide
+### Common Development Tasks
 
-## Future Phases (Not Yet Implemented)
+**Running the app:**
+```bash
+python src/main.py
+```
 
-- **Phase 2**: Basic workflow execution with hardcoded workflows
-- **Phase 3**: Dynamic node loading (parse Python files for @node decorator)
-- **Phase 4**: Virtual environment and dependency management
-- **Phase 5**: Integration, polish, real-time execution feedback
+**Testing a change:**
+1. Edit the relevant file (e.g., `src/ui/nodes/connection_item.py`)
+2. Run the app and interact with the changed feature
+3. Look for debug prints in console output
+4. Check that grid snapping, zoom, and pan still work
+
+**Adding a new port to nodes:**
+1. Modify port definitions in `src/ui/nodes/node_item.py` (around line 40)
+2. Update `port.py` if adding new port types
+3. Update connection validation in `port.py` `can_connect_to()` method
+4. Test connection drawing with new port type
+
+**Debugging layout issues:**
+1. Open the `.layout.json` file in your project folder
+2. Verify node keys match `{title}_{x}_{y}` format
+3. Check that all `from_node` and `to_node` references exist
+4. Use console output to verify layout loading in `project_manager.py`
+
+### When Adding Visual Features
+1. Work primarily in `src/ui/` (canvas, nodes, dialogs)
+2. Test with PyQt6 by running `python src/main.py`
+3. Make sure grid snapping still works after changes
+4. Ensure connections update properly when nodes move
+
+### When Modifying Node Architecture
+1. Update `src/ui/nodes/node_item.py` for visual changes
+2. Update `src/ui/nodes/port.py` for port behavior
+3. Update `connection_item.py` if routing logic changes
+4. Test with both new and existing projects (load from .layout.json)
+
+### When Working with QGraphicsItems
+- Override `boundingRect()` and `paint()` (required)
+- Use item flags for behavior: `ItemIsMovable`, `ItemIsSelectable`, `ItemSendsGeometryChanges`
+- Handle `itemChange()` for position updates that affect other items
+- Use `update()` to trigger repaints when visual state changes
+- Remember to call parent class methods in overrides
+
+### When Saving/Loading Projects
+- Always validate that nodes exist before restoring connections
+- Use `layout_manager.py` for serialization; don't write JSON directly
+- Test with projects missing nodes/connections to ensure graceful handling
+- Remember that layout is separate from code; code is the source of truth
+
+## Recent Development History
+
+Key commits showing implementation progression:
+- `94d486b` - Minor changes (latest)
+- `fa91f38` - Switched to project-based saving
+- `bd0f475` - Save polish
+- `36c1266` - Basic save and load implemented
+- `d79732a` - Polished bridges (connection system)
+- Earlier - Port system, node items, canvas foundation
 
 ## Design Philosophy
 
 **Simplicity First:**
-- Manual synchronization (explicit "Reload Script" button) over automatic syncing
-- DAG-only execution (no cycles) to avoid complexity
-- Decorator-based node discovery (Pythonic and familiar)
-- Process isolation for safety without complex sandboxing
+- Manual synchronization between code and layout (explicit saves vs. auto-sync)
+- Port-based connections (clearer intent than generic edges)
+- Composite node keys for uniqueness without UUIDs
+- Orthogonal routing for predictable, readable layouts
 
 **User Experience:**
 - Visual editor should feel responsive and predictable
 - Code is the source of truth for logic
 - Layout is visual metadata stored separately
-- No custom config languages - just Python
+- Welcome dialog guides first-time users
+- Grid snapping provides satisfying, aligned layouts
 
-## When Adding New Node Types
-
-1. Ensure `@node` decorator is applied to function
-2. Function signature must be `def func_name(inputs, global_state):`
-3. Return a dictionary of output values
-4. Node will auto-appear in canvas after "Reload Script" (future feature)
-
-## When Modifying the Canvas
-
-- Always maintain scene coordinate system (-5000 to 5000)
-- Preserve grid snapping behavior (20px intervals)
-- Use `QPointF` for positions, convert to grid via `round(value / 20) * 20`
-- Update connections when nodes move (future: via `itemChange()` callback)
-
-## When Working with QGraphicsItems
-
-- Override `boundingRect()` and `paint()` (required)
-- Use item flags for behavior: `ItemIsMovable`, `ItemIsSelectable`, `ItemSendsGeometryChanges`
-- Handle `itemChange()` for position updates that affect other items
-- Use `update()` to trigger repaints when visual state changes
+**Code Organization:**
+- Separate concerns: ports, connections, nodes are independent classes
+- Layout manager handles all JSON serialization
+- Project manager handles folder structure and validation
+- Canvas manages drawing and interaction

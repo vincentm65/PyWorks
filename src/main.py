@@ -182,6 +182,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"PyWorks - {self.project_name}")
         print("Project Saved")
         
+        
     def set_current_project_path(self, project_path):
         self.current_project_path = Path(project_path)
         self.project_name = get_project_name(self.current_project_path)
