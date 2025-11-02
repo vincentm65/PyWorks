@@ -12,6 +12,7 @@ from ui.canvas import CanvasGraphicsView
 from ui.editor import EditorWidget
 from ui.console import ConsoleWidget
 from ui.dialogs.welcome_dialog import WelcomeDialog
+from ui.status_bar import StatusBarWidget
 from utils.project_manager import create_project, validate_project, get_project_name
 from utils.layout_manager import LayoutManager
 from core.node_registry import NodeRegistry
@@ -35,6 +36,12 @@ class MainWindow(QMainWindow):
 
         # Connect canvas node double-click signal to editor
         self.canvas.scene.nodeDoubleClicked.connect(self._on_node_double_clicked)
+
+        # Connect zoom and selection signals
+        self.canvas.zoom_changed.connect(self.status_bar.update_zoom)
+        self.canvas.scene.selectionChanged.connect(
+            lambda: self.status_bar.update_selection(self.canvas.scene)
+        )
 
         QShortcut(QKeySequence("Ctrl+S"), self, activated=self.save)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_file)
@@ -90,6 +97,7 @@ class MainWindow(QMainWindow):
         self.editor = EditorWidget()
         self.console = ConsoleWidget()
         self.node_list_widget = NodeListWidget() 
+        
 
         for widget, title, area in [
             (self.node_list_widget, "Node List", Qt.DockWidgetArea.LeftDockWidgetArea),
@@ -99,6 +107,9 @@ class MainWindow(QMainWindow):
             dock = QDockWidget(title, self)
             dock.setWidget(widget)
             self.addDockWidget(area, dock)
+
+        self.status_bar = StatusBarWidget(self)
+        self.setStatusBar(self.status_bar)
 
     def new_file(self):
         name, ok = QInputDialog.getText(self, "New Project", "Enter project name:")
@@ -150,6 +161,7 @@ class MainWindow(QMainWindow):
             print(f"Project saved as: {new_project_path}")
         except FileExistsError as e:
             print(str(e))
+
     def save(self):
         if not self.current_project_path:
             print("No project open to save.")
@@ -166,7 +178,9 @@ class MainWindow(QMainWindow):
         print(f"Layout saved to {layout_path}")
 
         self.setWindowTitle(f"PyWorks - {self.project_name}")
+        self.status_bar.show_temporary_message("✓ Project saved", 2000)
         print("Project Saved")
+        
 
     def set_current_project_path(self, project_path):
         self.current_project_path = Path(project_path)
@@ -184,6 +198,9 @@ class MainWindow(QMainWindow):
 
             print(f"Loaded project from {layout_path}")
 
+        self.status_bar.update_project(self.project_name)
+        self.status_bar.update_canvas_stats(self.canvas.scene)
+
     def close_current_project(self):
         self.canvas.scene.clear()
         self.canvas.scene.connections = []
@@ -197,6 +214,7 @@ class MainWindow(QMainWindow):
         self.pause_action.setEnabled(False)
         self.stop_action.setEnabled(False)
 
+        self.status_bar.reset_to_defaults()
         print("Project closed")
 
     def prompt_new_project_on_launch(self):

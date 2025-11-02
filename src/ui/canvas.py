@@ -25,12 +25,14 @@ class CanvasGraphicsView(QGraphicsView):
         self.scene.setSceneRect(QRectF(-5000, -5000, 10000, 10000))
         self.setScene(self.scene)
         
-
         # Initial zoom level
         self.zoom_factor = 1.25
         self.min_zoom = 0.1
         self.max_zoom = 5.0
         self.current_scale = 1.0
+
+    # Create signal for zoom change
+    zoom_changed = pyqtSignal(float)
 
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
@@ -43,6 +45,7 @@ class CanvasGraphicsView(QGraphicsView):
         if self.min_zoom <= new_scale <= self.max_zoom:
             self.scale(zoom, zoom)
             self.current_scale = new_scale
+            self.zoom_changed.emit(self.current_scale)
 
     def paintEvent(self, event):
         super().paintEvent(event)
