@@ -1,19 +1,20 @@
 import sys
 import shutil
-from PyQt6.QtWidgets import QDockWidget
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QWidget, QGraphicsView, QToolBar, QFileDialog, QInputDialog
-from PyQt6.QtGui import QAction, QShortcut, QKeySequence
 from pathlib import Path
-from utils.project_manager import create_project, validate_project, get_project_name
+
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QAction, QShortcut, QKeySequence
+from PyQt6.QtWidgets import (QDockWidget, QApplication, QMainWindow, QToolBar,
+                             QFileDialog, QInputDialog)
 
 from ui.node_list import NodeListWidget
 from ui.canvas import CanvasGraphicsView
 from ui.editor import EditorWidget
 from ui.console import ConsoleWidget
 from ui.dialogs.welcome_dialog import WelcomeDialog
-
+from utils.project_manager import create_project, validate_project, get_project_name
 from utils.layout_manager import LayoutManager
+from core.node_registry import NodeRegistry
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -30,8 +31,11 @@ class MainWindow(QMainWindow):
 
         self.project_name = None
         self.current_project_path = None
+        self.node_registry = NodeRegistry()
 
-        # Bind Shortcuts
+        # Connect canvas node double-click signal to editor
+        self.canvas.scene.nodeDoubleClicked.connect(self._on_node_double_clicked)
+
         QShortcut(QKeySequence("Ctrl+S"), self, activated=self.save)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_file)
         QShortcut(QKeySequence("Ctrl+N"), self, activated=self.new_file)
@@ -55,6 +59,10 @@ class MainWindow(QMainWindow):
         self.stop_action.triggered.connect(self.stop)
         toolbar.addAction(self.stop_action)
 
+        self.reload_action = QAction("Reload Script", self)
+        self.reload_action.triggered.connect(self.reload_script)
+        toolbar.addAction(self.reload_action)
+
 
     def _create_menubar(self):
         file_menu = self.menuBar().addMenu("File")
@@ -74,19 +82,17 @@ class MainWindow(QMainWindow):
             ("Redo", self.redo)
         ]:
             edit_menu.addAction(name, slots)
-        
- 
+
     def _create_widgets(self):
-        # Central Widget Layout
         self.canvas = CanvasGraphicsView()
         self.setCentralWidget(self.canvas)
 
         self.editor = EditorWidget()
         self.console = ConsoleWidget()
+        self.node_list_widget = NodeListWidget() 
 
-        # Dockable Widgets
         for widget, title, area in [
-            (NodeListWidget(), "Node List", Qt.DockWidgetArea.LeftDockWidgetArea),
+            (self.node_list_widget, "Node List", Qt.DockWidgetArea.LeftDockWidgetArea),
             (self.editor, "Editor", Qt.DockWidgetArea.RightDockWidgetArea),
             (self.console, "Console", Qt.DockWidgetArea.BottomDockWidgetArea),
         ]:
@@ -94,8 +100,6 @@ class MainWindow(QMainWindow):
             dock.setWidget(widget)
             self.addDockWidget(area, dock)
 
-
-    # Action Slots
     def new_file(self):
         name, ok = QInputDialog.getText(self, "New Project", "Enter project name:")
         if not ok or not name:
@@ -113,15 +117,12 @@ class MainWindow(QMainWindow):
             print(str(e))
 
     def open_file(self):
-        # Open folder
         project_path = QFileDialog.getExistingDirectory(self, "Open Folder")
-        
-        # Validate its a valid project
+
         if not project_path or not validate_project(Path(project_path)):
             print("Invalid PyWorks project folder.")
             return
-        
-        # Load project 
+
         self.canvas.scene.clear()
         self.canvas.scene.connections = []
         self.set_current_project_path(project_path)
@@ -134,79 +135,56 @@ class MainWindow(QMainWindow):
             return
 
         self.save()
-        
+
         new_name, ok = QInputDialog.getText(self, "Save Project As", "Enter new project name:")
         if not ok or not new_name:
             return
-        
+
         new_location = QFileDialog.getExistingDirectory(self, "Select New Project Location")
         if not new_location:
             return
         new_project_path = Path(new_location) / new_name
         try:
-            # Copy entire folder contents
             shutil.copytree(self.current_project_path, new_project_path)
             self.set_current_project_path(new_project_path)
             print(f"Project saved as: {new_project_path}")
         except FileExistsError as e:
             print(str(e))
-        
     def save(self):
         if not self.current_project_path:
             print("No project open to save.")
             return
-        
-        # Set editor content and save to workflow.py
-        editor_content = self.editor.toPlainText()
-        workflow_path = self.current_project_path / "workflow.py"
-        try:
-            with open(workflow_path, 'w', encoding='utf-8') as f:
-                f.write(editor_content)
-                print(f"Workflow code saved to {workflow_path}")
-        except Exception as e:
-            print(f"Error saving workflow code: {e}")
-        
-        # Save layout to .layout.json
-        layout_path = self.current_project_path / ".layout.json"
 
-        success = self.layout_manager.save_layout(
+        editor_content = self.editor.toPlainText()
+        self.reload_script()
+
+        layout_path = self.current_project_path / ".layout.json"
+        self.layout_manager.save_layout(
             self.canvas.scene,
             str(layout_path)
         )
-        if success:
-            print(f"Layout saved to {layout_path}")
-        else:
-            print("Failed to save layout")
+        print(f"Layout saved to {layout_path}")
 
-        # Set window title
         self.setWindowTitle(f"PyWorks - {self.project_name}")
         print("Project Saved")
-        
-        
+
     def set_current_project_path(self, project_path):
         self.current_project_path = Path(project_path)
         self.project_name = get_project_name(self.current_project_path)
 
         self.setWindowTitle(f"PyWorks - {self.project_name}")
-
-        workflow_path = self.current_project_path / "workflow.py"
-        if workflow_path.exists():
-            with open(workflow_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-                self.editor.setPlainText(content)
-        else:
-            print(f"No workflow.py found in {self.current_project_path}")
+        self.reload_script()
 
         layout_path = self.current_project_path / ".layout.json"
         if layout_path.exists():
-            success = self.layout_manager.load_layout(self.canvas.scene, str(layout_path))
+            self.layout_manager.load_layout(self.canvas.scene, str(layout_path))
             self.run_action.setEnabled(True)
             self.pause_action.setEnabled(True)
             self.stop_action.setEnabled(True)
 
             print(f"Loaded project from {layout_path}")
-    
-    def close_currnet_project(self):
+
+    def close_current_project(self):
         self.canvas.scene.clear()
         self.canvas.scene.connections = []
         self.editor.clear()
@@ -214,7 +192,7 @@ class MainWindow(QMainWindow):
         self.current_project_path = None
         self.project_name = None
         self.setWindowTitle("PyWorks")
-        
+
         self.run_action.setEnabled(False)
         self.pause_action.setEnabled(False)
         self.stop_action.setEnabled(False)
@@ -222,7 +200,6 @@ class MainWindow(QMainWindow):
         print("Project closed")
 
     def prompt_new_project_on_launch(self):
-        # On launch, prompt user to create or open project
         dialog = WelcomeDialog(self)
         dialog.exec()
         if dialog.selected_action == "new":
@@ -230,22 +207,56 @@ class MainWindow(QMainWindow):
         elif dialog.selected_action == "open":
             self.open_file()
 
-    # Place holder Action Slots
-    def undo(self): print("Undo")
-    def redo(self): print("Redo")
-    def run(self): print("Run")
-    def pause(self): print("Pause")
-    def stop(self): print("Stop")
+    def reload_script(self):
+        if not self.current_project_path:
+            print("No project open.")
+            return
+
+        try:
+            # Discover nodes from the project
+            self.node_registry.discover(Path(self.current_project_path))
+
+            # Update the Node List UI
+            if self.node_list_widget:
+                self.node_list_widget.clear()  # Clear existing tree
+                self.node_list_widget.populate_from_registry(self.node_registry)
+
+            print(f"✓ Reloaded {len(self.node_registry.nodes)} nodes")
+        except Exception as e:
+            print(f"Error reloading script: {e}")
+
+    def _on_node_double_clicked(self, fqnn):
+        """Handle node double-click by showing function in editor."""
+        metadata = self.node_registry.get_metadata(fqnn)
+        if metadata:
+            self.editor.show_function_context(metadata)
+            print(f"Showing function: {fqnn}")
+        else:
+            print(f"Error: Metadata not found for {fqnn}")
+
+    # Placeholder actions - to be implemented
+    def undo(self):
+        print("Undo")
+
+    def redo(self):
+        print("Redo")
+
+    def run(self):
+        print("Run")
+
+    def pause(self):
+        print("Pause")
+
+    def stop(self):
+        print("Stop")
 
 
 def main():
     app = QApplication(sys.argv)
     window = MainWindow()
     window.showMaximized()
-    sys.exit(app.exec()) 
+    sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
-
-
-

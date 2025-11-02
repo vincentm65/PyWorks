@@ -21,30 +21,32 @@ class LayoutManager():
 
         for item in scene.items():
             if isinstance(item, NodeItem):
-                node_title = item.title
                 node_x = item.pos().x()
                 node_y = item.pos().y()
 
-                node_key = f"{node_title}_{int(node_x)}_{int(node_y)}"
+                node_key = f"{item.fqnn}_{int(node_x)}_{int(node_y)}"
 
-                layout_data["nodes"][node_key] = {"x": node_x, "y": node_y}
+                layout_data["nodes"][node_key] = {
+                    "category": item.category,
+                    "function": item.function_name,
+                    "x": node_x, 
+                    "y": node_y
+                    }
 
         for connection in scene.connections:
             source_node = connection.source_port.parent_node
-            source_title = source_node.title
             source_type = connection.source_port.port_type
             source_dir = connection.source_port.port_direction
             source_x = int(source_node.pos().x())
             source_y = int(source_node.pos().y())
-            source_key = f"{source_title}_{source_x}_{source_y}"
+            source_key = f"{source_node.fqnn}_{source_x}_{source_y}"
 
             target_node = connection.target_port.parent_node
-            target_title = target_node.title
             target_type = connection.target_port.port_type
             target_dir = connection.target_port.port_direction
             target_x = int(target_node.pos().x())
             target_y = int(target_node.pos().y())
-            target_key = f"{target_title}_{target_x}_{target_y}"
+            target_key = f"{target_node.fqnn}_{target_x}_{target_y}"
 
             connection_data = {
                 "source_node_key": source_key,
@@ -81,14 +83,14 @@ class LayoutManager():
         
         node_dict ={}
 
-        for node_key, position, in layout_data["nodes"].items():
-            part = node_key.rsplit('_', 2)
-            node_title = part[0]
-
+        for node_key, position in layout_data["nodes"].items():
+            category = position["category"]
+            function = position["function"]
+            fqnn = f"{category}.{function}"
             x = position["x"]
             y = position["y"]
 
-            node = NodeItem(node_title, x, y)
+            node = NodeItem(fqnn, x, y)
             scene.addItem(node)
             node_dict[node_key] = node
 

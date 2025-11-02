@@ -3,12 +3,11 @@ from pathlib import Path
 from typing import Optional
 
 
-# Default workflow.py template with example nodes
-WORKFLOW_TEMPLATE = '''"""
-PyWorks Workflow
+# Default template with example nodes
+EXAMPLE_CATEGORY_TEMPLATE = '''"""
+Example Node Category
 
-Define your nodes here using the @node decorator.
-Each node receives inputs from parent nodes and can pass data to children.
+Add your @node decorated functions here.
 """
 
 def node(func):
@@ -18,61 +17,44 @@ def node(func):
 
 
 @node
-def get_data(inputs, global_state):
+def example_node(inputs, global_state):
     """
-    Example node that produces initial data.
+    Example node that demonstrates the basic structure.
 
     Args:
-        inputs: Dictionary of parent node outputs (empty for root nodes)
-        global_state: Shared state dictionary across all nodes
-
-    Returns:
-        Dictionary of outputs that will be passed to child nodes
-    """
-    # This is a root node with no parents, so inputs will be empty
-    numbers = [1, 2, 3, 4, 5]
-    print(f"Generated data: {numbers}")
-    return {"numbers": numbers}
-
-
-@node
-def process_data(inputs, global_state):
-    """
-    Example node that processes data from the get_data node.
-
-    Args:
-        inputs: Contains outputs from parent nodes
-                Example: {"get_data": {"numbers": [1,2,3,4,5]}}
+        inputs: Dictionary of parent node outputs
         global_state: Shared state dictionary
 
     Returns:
-        Dictionary of processed outputs
+        Dictionary of outputs for child nodes
     """
-    # Access data from the parent 'get_data' node
-    data = inputs.get("get_data", {}).get("numbers", [])
+    print("Example node executed")
+    return {"result": "Hello from example node"}
 
-    # Process the data (multiply each number by 2)
-    result = [x * 2 for x in data]
 
-    print(f"Processed {len(data)} numbers")
-    print(f"Result: {result}")
-
-    return {"processed": result}
+@node
+def another_example(inputs, global_state):
+    """Another example node."""
+    data = inputs.get("example_node", {}).get("result", "")
+    print(f"Received: {data}")
+    return {"processed": data.upper()}
 '''
 
 
 def create_project(name: str, location: str) -> Path:
     # Create project folder path
     project_path = Path(location) / name
+    nodes_dir = project_path / "nodes"
 
     # Check if project already exists
     if project_path.exists():
         raise FileExistsError(f"Project already exists at: {project_path}")
 
-    # Create project directory and workflow.py
+    # Create project directory and example.py
     project_path.mkdir(parents=True, exist_ok=False)
-    workflow_file = project_path / "workflow.py"
-    workflow_file.write_text(WORKFLOW_TEMPLATE, encoding='utf-8')
+    nodes_dir.mkdir(parents=True, exist_ok=False)
+    workflow_file = nodes_dir / "example.py"
+    workflow_file.write_text(EXAMPLE_CATEGORY_TEMPLATE, encoding='utf-8')
 
     # Create empty requirements.txt
     requirements_file = project_path / "requirements.txt"
@@ -95,13 +77,13 @@ def validate_project(path: Path) -> bool:
     if not path.exists() or not path.is_dir():
         return False
 
-    # Check for required files
-    required_files = ["workflow.py", ".layout.json"]
+    nodes_path = path / "nodes"
+    if not nodes_path.exists() or not nodes_path.is_dir():
+        return False
 
-    for file_name in required_files:
-        file_path = path / file_name
-        if not file_path.exists() or not file_path.is_file():
-            return False
+    layout_path = path / ".layout.json"
+    if not layout_path.exists() or not layout_path.is_file():
+        return False
 
     # Validate .layout.json structure
     try:

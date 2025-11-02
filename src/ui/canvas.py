@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QRectF
+from PyQt6.QtCore import Qt, QRectF, pyqtSignal
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem
 from PyQt6.QtGui import QPainter, QColor, QPainterPath, QPen, QTransform
 
@@ -77,6 +77,9 @@ class CanvasGraphicsView(QGraphicsView):
         event.acceptProposedAction()
 
 class CanvasGraphicsScene(QGraphicsScene):
+    # Signal emitted when a node is double-clicked
+    nodeDoubleClicked = pyqtSignal(str)  # Emits FQNN
+
     def __init__(self, parent=None, grid_size=20, radius=10):
         super().__init__(parent)
         self.setBackgroundBrush(QColor("#222"))
@@ -86,6 +89,13 @@ class CanvasGraphicsScene(QGraphicsScene):
         self.connection_start_port = None
         self.is_drawing_connection = False
         self.connections = []
+
+    def addItem(self, item):
+        """Override addItem to connect NodeItem signals."""
+        super().addItem(item)
+        # Connect nodeDoubleClicked signal from NodeItem to scene signal
+        if isinstance(item, NodeItem):
+            item.nodeDoubleClicked.connect(self.nodeDoubleClicked.emit)
 
     def drawBackground(self, painter, rect):
         path = QPainterPath()

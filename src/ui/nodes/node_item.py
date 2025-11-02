@@ -1,20 +1,26 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QStyle
-from PyQt6.QtCore import QRectF, QMimeData, QPointF, Qt
+from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QGraphicsObject, QStyle
+from PyQt6.QtCore import QRectF, QMimeData, QPointF, Qt, pyqtSignal
 from PyQt6.QtGui import QPainter, QColor, QDrag, QPen, QBrush
 
 from ui.nodes.port import PortItem
 
-class NodeItem(QGraphicsItem):
-    def __init__(self, function_name, x, y, parent=None):
+class NodeItem(QGraphicsObject):
+    # Signal emitted when node is double-clicked
+    nodeDoubleClicked = pyqtSignal(str)  # Emits FQNN
+
+    def __init__(self, fqnn, x, y, parent=None):
         super().__init__(parent)
         # Node properties
         self.width = 140
         self.height = 80
-        self.title = function_name
+        self.fqnn = fqnn
+        self.category = fqnn.split('.')[0]
+        self.function_name = fqnn.split('.')[1]
         self.add_ports()
         self.setAcceptHoverEvents(True)
         self.is_hovered = False
+        self.setToolTip(fqnn)
 
         # Center the node at the given position
         self.setPos(x - self.width / 2, y - self.height / 2)
@@ -60,11 +66,8 @@ class NodeItem(QGraphicsItem):
         painter.setPen(border_pen)
         painter.drawRoundedRect(0, 0, self.width, self.height, radius, radius)
         painter.setPen(QColor("#fff"))
-        painter.drawText(10, 20, self.title)
-
-
-
-        
+        painter.drawText(10, 20, self.function_name)
+    
     def get_status_color(self):
         colors = {
             "idle": "#444",
@@ -120,3 +123,7 @@ class NodeItem(QGraphicsItem):
         self.is_hovered = False
         self.update()
         super().hoverLeaveEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        """Emit signal when node is double-clicked."""
+        self.nodeDoubleClicked.emit(self.fqnn)
