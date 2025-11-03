@@ -12,6 +12,7 @@ class StatusBarWidget(QStatusBar):
             self.project_label = QLabel("No project")
             self.canvas_stats_label = QLabel("0 nodes, 0 connections")
             self.zoom_label = QLabel("Zoom: 100%")
+            self.coords_label = QLabel("Pos: (0, 0)")
             self.selection_label = QLabel("")
             
             # Add to bar (left-aligned)
@@ -21,6 +22,7 @@ class StatusBarWidget(QStatusBar):
 
             # Add to bar (right-aligned)
             self.addPermanentWidget(self.zoom_label)
+            self.addPermanentWidget(self.coords_label)
             self.addPermanentWidget(self.selection_label)
 
             # Style all labels
@@ -29,7 +31,7 @@ class StatusBarWidget(QStatusBar):
     def _apply_style(self):
         style = "color: #ccc; padding: 2px 5px;"
         for label in [self.status_label, self.project_label,
-                        self.canvas_stats_label, self.zoom_label,
+                        self.canvas_stats_label, self.zoom_label, self.coords_label,
                         self.selection_label]:
             label.setStyleSheet(style)
 
@@ -55,6 +57,15 @@ class StatusBarWidget(QStatusBar):
 
         percentage = round(scale * 100)
         self.zoom_label.setText(f"Zoom: {percentage}%")
+
+    def update_coordinates(self, canvas_view):
+        point = canvas_view.viewport().rect().center()
+        
+        x = round(canvas_view.mapToScene(point).x(), 2)
+        y = round(canvas_view.mapToScene(point).y(), 2)
+
+        self.coords_label.setText(f"Pos: ({x}, {y})")
+
 
     def update_selection(self, scene):
         from ui.nodes.node_item import NodeItem

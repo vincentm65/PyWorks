@@ -58,9 +58,10 @@ class ConnectionBridge(QGraphicsPathItem):
         path = self.create_orthoganal_path()
         self.setPath(path)
     
-    def create_orthoganal_path(self):
-        start = self.source_port.get_center_pos()
-        end = self.target_port.get_center_pos()
+    @staticmethod
+    def create_orthogonal_path_between_points(start_point, end_point, port_type, source_y, target_y):
+        start = start_point
+        end = end_point
 
         path = QPainterPath(start)
 
@@ -72,13 +73,13 @@ class ConnectionBridge(QGraphicsPathItem):
         radius = 10
         base_mid_x = (start.x() + end.x()) / 2
         # Otherwise, use curved orthogonal routing, based on node position and port type
-        if self.source_port.port_type == "FLOW":
-            if self.source_port.scenePos().y() < self.target_port.scenePos().y():
+        if port_type == "FLOW":
+            if source_y < target_y:
                 mid_x = base_mid_x - 10
             else:
                 mid_x = base_mid_x + 10
-        elif self.source_port.port_type == "DATA":
-            if self.source_port.scenePos().y() < self.target_port.scenePos().y():
+        elif port_type == "DATA":
+            if source_y < target_y:
                 mid_x = base_mid_x + 10
             else:
                 mid_x = base_mid_x - 10
@@ -94,14 +95,17 @@ class ConnectionBridge(QGraphicsPathItem):
         path.lineTo(mid_x, end.y() - v_radius)
         path.quadTo(QPointF(mid_x, end.y()), QPointF(mid_x + h_radius, end.y()))
         path.lineTo(end)
-
-        print(f"Port type: {self.source_port.port_type}")
-        print(f"Source Y: {self.source_port.scenePos().y()}, Target Y: {self.target_port.scenePos().y()}")
-        print(f"Going down? {self.source_port.scenePos().y() < self.target_port.scenePos().y()}")
-        print(f"Calculated mid_x: {mid_x}")
-        print("---")
-
+        
         return path
+
+    def create_orthoganal_path(self):
+        start_point = self.source_port.get_center_pos()
+        end_point = self.target_port.get_center_pos()
+        port_type = self.source_port.port_type
+        source_y = self.source_port.scenePos().y()
+        target_y = self.target_port.scenePos().y()
+
+        return ConnectionBridge.create_orthogonal_path_between_points(start_point, end_point, port_type, source_y, target_y)
     
     def hoverEnterEvent(self, event):
         self.is_hovered = True

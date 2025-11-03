@@ -1,5 +1,5 @@
 from PyQt6.QtCore import Qt, QRectF, pyqtSignal
-from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsLineItem
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPathItem
 from PyQt6.QtGui import QPainter, QColor, QPainterPath, QPen, QTransform
 
 from ui.nodes.node_item import NodeItem
@@ -8,6 +8,10 @@ from ui.nodes.connection_item import ConnectionBridge
 
 
 class CanvasGraphicsView(QGraphicsView):
+    # Create signal for zoom/pan change
+    zoom_changed = pyqtSignal(float)
+    view_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -31,9 +35,6 @@ class CanvasGraphicsView(QGraphicsView):
         self.max_zoom = 5.0
         self.current_scale = 1.0
 
-    # Create signal for zoom change
-    zoom_changed = pyqtSignal(float)
-
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
             zoom = self.zoom_factor
@@ -46,6 +47,12 @@ class CanvasGraphicsView(QGraphicsView):
             self.scale(zoom, zoom)
             self.current_scale = new_scale
             self.zoom_changed.emit(self.current_scale)
+            self.view_changed.emit()
+
+    # For panning coord tracking
+    def scrollContentsBy(self, dx, dy):
+      super().scrollContentsBy(dx, dy)
+      self.view_changed.emit()
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -142,14 +149,27 @@ class CanvasGraphicsScene(QGraphicsScene):
     def mouseMoveEvent(self, event):
         if self.is_drawing_connection:
             if self.temp_connection is None:
-                self.temp_connection = QGraphicsLineItem()
-                self.temp_connection.setPen(QPen(QColor("#FFF"), 2, Qt.PenStyle.DashLine))
+                self.temp_connection = QGraphicsPathItem()
+                if self.connection_start_port.port_type == "FLOW":
+                    color = QColor(110, 110, 110)
+                elif self.connection_start_port.port_type == "DATA":
+                    color = QColor(138, 43, 226) 
+                self.temp_connection.setPen(QPen(color, 2, Qt.PenStyle.DashLine))
                 self.addItem(self.temp_connection)
+                self.temp_connection.setZValue(-1)
 
             start_pos = self.connection_start_port.get_center_pos()
             end_pos = event.scenePos()
 
-            self.temp_connection.setLine(start_pos.x(), start_pos.y(), end_pos.x(), end_pos.y())
+            path = ConnectionBridge.create_orthogonal_path_between_points(
+              start_pos,
+              end_pos,
+              self.connection_start_port.port_type,
+              self.connection_start_port.scenePos().y(),
+              end_pos.y()  # Mouse cursor's y position acts as target_y
+            )
+
+            self.temp_connection.setPath(path)
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):

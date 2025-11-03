@@ -43,6 +43,10 @@ class MainWindow(QMainWindow):
             lambda: self.status_bar.update_selection(self.canvas.scene)
         )
 
+        self.canvas.view_changed.connect(
+            lambda: self.status_bar.update_coordinates(self.canvas)
+        )
+
         QShortcut(QKeySequence("Ctrl+S"), self, activated=self.save)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_file)
         QShortcut(QKeySequence("Ctrl+N"), self, activated=self.new_file)

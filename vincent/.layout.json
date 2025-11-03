@@ -1,47 +1,63 @@
 {
   "version": "1.0",
   "nodes": {
-    "example.example_node_-530_-300": {
+    "example.example_node_-520_-160": {
       "category": "example",
       "function": "example_node",
-      "x": -530.0,
-      "y": -300.0
+      "x": -520.0,
+      "y": -160.0
     },
-    "example.another_example_-140_-240": {
+    "example.another_example_-160_20": {
       "category": "example",
       "function": "another_example",
-      "x": -140.0,
-      "y": -240.0
+      "x": -160.0,
+      "y": 20.0
     },
-    "example.example_node_80_-200": {
+    "example.example_node_280_-40": {
       "category": "example",
       "function": "example_node",
-      "x": 80.0,
-      "y": -200.0
+      "x": 280.0,
+      "y": -40.0
     }
   },
   "connections": [
     {
-      "source_node_key": "example.example_node_-530_-300",
+      "source_node_key": "example.example_node_-520_-160",
       "source_port_type": "DATA",
       "source_port_direction": "OUT",
-      "target_node_key": "example.another_example_-140_-240",
+      "target_node_key": "example.another_example_-160_20",
       "target_port_type": "DATA",
       "target_port_direction": "IN"
     },
     {
-      "source_node_key": "example.example_node_-530_-300",
+      "source_node_key": "example.example_node_-520_-160",
       "source_port_type": "FLOW",
       "source_port_direction": "OUT",
-      "target_node_key": "example.another_example_-140_-240",
+      "target_node_key": "example.another_example_-160_20",
       "target_port_type": "FLOW",
       "target_port_direction": "IN"
     },
     {
-      "source_node_key": "example.another_example_-140_-240",
+      "source_node_key": "example.another_example_-160_20",
       "source_port_type": "DATA",
       "source_port_direction": "OUT",
-      "target_node_key": "example.example_node_80_-200",
+      "target_node_key": "example.example_node_280_-40",
+      "target_port_type": "DATA",
+      "target_port_direction": "IN"
+    },
+    {
+      "source_node_key": "example.another_example_-160_20",
+      "source_port_type": "FLOW",
+      "source_port_direction": "OUT",
+      "target_node_key": "example.example_node_280_-40",
+      "target_port_type": "FLOW",
+      "target_port_direction": "IN"
+    },
+    {
+      "source_node_key": "example.example_node_-520_-160",
+      "source_port_type": "DATA",
+      "source_port_direction": "OUT",
+      "target_node_key": "example.example_node_280_-40",
       "target_port_type": "DATA",
       "target_port_direction": "IN"
     }
