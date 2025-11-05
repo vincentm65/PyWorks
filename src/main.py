@@ -171,8 +171,8 @@ class MainWindow(QMainWindow):
             print("No project open to save.")
             return
 
-        editor_content = self.editor.toPlainText()
-        self.reload_script()
+        if self.editor.save():
+            self.reload_script()
 
         layout_path = self.current_project_path / ".layout.json"
         self.layout_manager.save_layout(
