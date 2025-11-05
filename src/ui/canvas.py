@@ -133,6 +133,8 @@ class CanvasGraphicsScene(QGraphicsScene):
         if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             for item in self.selectedItems():
                 self.removeItem(item)
+                if isinstance(item, ConnectionBridge):
+                    self.connections.remove(item)
         else:
             super().keyPressEvent(event)
 
