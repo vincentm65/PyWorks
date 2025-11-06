@@ -13,9 +13,11 @@ from ui.editor import EditorWidget
 from ui.console import ConsoleWidget
 from ui.dialogs.welcome_dialog import WelcomeDialog
 from ui.status_bar import StatusBarWidget
-from utils.project_manager import create_project, validate_project, get_project_name
+from utils.project_manager import create_project, validate_project, get_project_name, initialize_project_venv
 from utils.layout_manager import LayoutManager
 from core.node_registry import NodeRegistry
+from core.venv_manager import VenvManager
+from core.package_installer import PackageInstallThread
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -33,6 +35,9 @@ class MainWindow(QMainWindow):
         self.project_name = None
         self.current_project_path = None
         self.node_registry = NodeRegistry()
+
+        self.venv_manager = None
+        self.install_thread = None
 
         # Connect canvas node double-click signal to editor
         self.canvas.scene.nodeDoubleClicked.connect(self._on_node_double_clicked)
@@ -93,6 +98,12 @@ class MainWindow(QMainWindow):
             ("Redo", self.redo)
         ]:
             edit_menu.addAction(name, slots)
+
+        tools_menu = self.menuBar().addMenu("Tools")
+        self.install_deps_action = QAction("Install Dependencies", self)
+        self.install_deps_action.triggered.connect(self.install_dependencies)
+        self.install_deps_action.setEnabled(False)
+        tools_menu.addAction(self.install_deps_action)
 
     def _create_widgets(self):
         self.canvas = CanvasGraphicsView()

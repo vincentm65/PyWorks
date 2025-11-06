@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Optional
+from src.core.venv_manager import VenvManager
 
 
 # Default template with example nodes
@@ -68,6 +69,14 @@ def create_project(name: str, location: str) -> Path:
         "connections": []
     }
     layout_file.write_text(json.dumps(empty_layout, indent=2), encoding='utf-8')
+    
+    print(f"Creating virtual environment for {name}...")
+    venv_manager = VenvManager(str(project_path))
+    if venv_manager.create_venv():
+        print("Virtual environment created successfully")
+    else:
+        print("Failed to create virtual environment")
+        
 
     print(f"Created new project: {project_path}")
     return project_path
@@ -99,6 +108,24 @@ def validate_project(path: Path) -> bool:
         return False
 
     return True
+
+def initialize_project_venv(project_path: Path) -> VenvManager:
+    venv_manager = VenvManager(str(project_path))
+
+    if not venv_manager.venv_exists():
+        print(f"Virtual environment not found. Creating one...")
+        if venv_manager.create_venv():
+            print("Virtual environment created successfully")
+        else:
+            print("Failed to create virtual environment")
+    else:
+        # Validate existing venv
+        if venv_manager.validate_venv():
+            print("Virtual environment is ready")
+        else:
+            print("Virtual environment exists but may be corrupted")
+    return venv_manager
+
 
 
 def get_project_name(path: Path) -> str:
