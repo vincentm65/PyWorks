@@ -1,11 +1,13 @@
 import sys
 '\nExample Node Category\n\nAdd your @node decorated functions here.\n'
 
+
 def node(func):
     """Decorator to mark a function as a workflow node."""
     func._is_workflow_node = True
     return func
 
+@node
 def example_node(inputs, global_state):
     """
     Example node that demonstrates the basic structure.

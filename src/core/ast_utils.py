@@ -1,11 +1,10 @@
 import ast
 from pathlib import Path
-from typing import Dict, Optional, List, Tuple
 
-def has_node_decorator(node: ast.AST, decorator_name: str) -> bool:
+# Check if a given AST node has a specific decorator
+def has_node_decorator(node, decorator_name):
     if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
         return False
-    
     for decorator in node.decorator_list:
         if isinstance(decorator, ast.Name) and decorator.id == decorator_name:
             return True
@@ -14,31 +13,28 @@ def has_node_decorator(node: ast.AST, decorator_name: str) -> bool:
     return False
 
 
-def extract_nodes_from_file(file_path: Path, category: str) -> Dict[str, Dict]:
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            file_content = f.read()
-    except OSError as e:
-        raise ValueError(f"Failed to read file {file_path}: {e}")
+# Parse a python file and return all @node decorated functions as a dictionary
+def extract_nodes_from_file(file_path: Path, category: str) -> dict:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        file_content = f.read()
 
     try:
         tree = ast.parse(file_content)
     except SyntaxError as e:
-        raise ValueError(f"Syntax error in {file_path}: {e}")
+        print(f"Syntax error in {file_path}: {e}")
+        return {}
 
-    nodes: Dict[str, Dict] = {}
+    nodes = {}
+
     for node in tree.body:
-        if not isinstance(node, ast.FunctionDef):
-            continue
-            
-        if has_node_decorator(node, 'node'):
+        if isinstance(node, ast.FunctionDef) and has_node_decorator(node, 'node'):
             node_name = node.name
-            fqnn = f"{category}.{node_name}"
-            
+            fqnn = f'{category}.{node_name}'
             nodes[fqnn] = {
                 'fqnn': fqnn,
                 'category': category,
-                'function_name': node_name,
+                'function_name': node.name,
+                'signature': extract_function_signature(node),
                 'file_path': file_path,
                 'docstring': ast.get_docstring(node),
                 'lineno': node.lineno,
@@ -47,76 +43,90 @@ def extract_nodes_from_file(file_path: Path, category: str) -> Dict[str, Dict]:
 
     return nodes
 
-
-def extract_function_with_imports(file_path: Path, function_name: str) -> Tuple[List[str], str]:
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            file_content = f.read()
-    except OSError as e:
-        raise ValueError(f"Failed to read file {file_path}: {e}")
+# Get the imports then get the specific funtion, combine them into a single string
+def extract_function_with_imports(file_path: Path, function_name: str) -> str:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        file_content = f.read()
 
     try:
         tree = ast.parse(file_content)
     except SyntaxError as e:
-        raise ValueError(f"Syntax error in {file_path}: {e}")
+        print(f"Syntax error in {file_path}: {e}")
+        return ""
 
     import_lines = []
-    function_code = ""
+    function_lines = []
 
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             import_lines.append(ast.get_source_segment(file_content, node))
         elif isinstance(node, ast.FunctionDef) and node.name == function_name:
-            function_code = ast.get_source_segment(file_content, node)
-            break
+            function_lines.append(ast.get_source_segment(file_content, node))
 
-    return import_lines, function_code
+    if not function_lines:
+        return ""
 
+    combined_code = '\n'.join(import_lines + [''] + function_lines)
+    return combined_code
 
 def replace_function_in_file(file_path: Path, function_name: str, new_code: str) -> bool:
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            original_content = f.read()
-    except OSError as e:
-        raise ValueError(f"Failed to read file {file_path}: {e}")
+    with open(file_path, 'r', encoding='utf-8') as f:
+        original_content = f.read()
 
     try:
         original_tree = ast.parse(original_content)
-    except SyntaxError as e:
-        raise ValueError(f"Syntax error in {file_path}: {e}")
-
-    # Parse new code
-    try:
         new_tree = ast.parse(new_code)
     except SyntaxError as e:
-        raise ValueError(f"Syntax error in new code: {e}")
+        print(f"Syntax error: {e}")
+        return False
+    
+    new_imports = []
+    new_function = None
 
-    # Find target function in original tree
-    target_function = None
-    for node in original_tree.body:
-        if isinstance(node, ast.FunctionDef) and node.name == function_name:
-            target_function = node
-            break
+    for node in new_tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            new_imports.append(node)
+        elif isinstance(node, ast.FunctionDef) and node.name == function_name:
+            new_function = node
+    
+    if not new_function:
+          print(f"Function '{function_name}' not found in new code")
+          return False
 
-    if not target_function:
-        raise ValueError(f"Function '{function_name}' not found in file")
-
-    # Replace function with new code
+    # Merge imports and replace function in original tree
+    function_replaced = False
     new_body = []
+
+    new_body.extend(new_imports)
+
     for node in original_tree.body:
-        if isinstance(node, ast.FunctionDef) and node.name == function_name:
-            new_body.append(target_function)
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            # Track existing imports to avoid duplicates
+            continue
+        elif isinstance(node, ast.FunctionDef) and node.name == function_name:
+            # Replace the target function
+            new_body.append(new_function)
+            function_replaced = True
         else:
+            # Keep everything else (other functions, classes, etc.)
             new_body.append(node)
 
-    # Update AST and write back
+    if not function_replaced:
+        print(f"Function '{function_name}' not found in original file")
+        return False
+
+    # Generate new source code
     original_tree.body = new_body
     new_source = ast.unparse(original_tree)
-    
-    try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(new_source)
-    except OSError as e:
-        raise ValueError(f"Failed to write to {file_path}: {e}")
+
+    # Write back to file
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(new_source)
 
     return True
+
+def extract_function_signature(func_node: ast.FunctionDef) -> str:
+    func_node_args = []
+    for item in func_node.args.args:
+        func_node_args.append(item.arg)
+    return f"({", ".join(func_node_args)})"
