@@ -138,6 +138,8 @@ class MainWindow(QMainWindow):
         try:
             project_path = create_project(name, location)
             self.set_current_project_path(project_path)
+            initialize_project_venv(project_path)
+            self.venv_manager = VenvManager(project_path)
             print(f"New project created at: {project_path}")
         except FileExistsError as e:
             print(str(e))
@@ -152,6 +154,9 @@ class MainWindow(QMainWindow):
         self.canvas.scene.clear()
         self.canvas.scene.connections = []
         self.set_current_project_path(project_path)
+
+        initialize_project_venv(project_path)
+        self.venv_manager = VenvManager(project_path)
 
         print(f"Project opened: {project_path}")
 
@@ -210,6 +215,7 @@ class MainWindow(QMainWindow):
             self.run_action.setEnabled(True)
             self.pause_action.setEnabled(True)
             self.stop_action.setEnabled(True)
+            self.install_deps_action.setEnabled(True)
 
             print(f"Loaded project from {layout_path}")
 
@@ -223,15 +229,45 @@ class MainWindow(QMainWindow):
 
         self.current_project_path = None
         self.project_name = None
+        self.venv_manager = None
         self.setWindowTitle("PyWorks")
 
         self.run_action.setEnabled(False)
         self.pause_action.setEnabled(False)
         self.stop_action.setEnabled(False)
+        self.install_deps_action.setEnabled(False)
 
         self.status_bar.reset_to_defaults()
         print("Project closed")
 
+    def install_dependencies(self):
+        if not self.venv_manager:
+            print("No virtual environment found.")
+            return
+        requirements_file = self.current_project_path / "requirements.txt"
+
+        if not requirements_file.exists() or not requirements_file.read_text().strip():
+            print("No dependencies to install.")
+            return
+        
+        pip_path = self.venv_manager.get_pip_path()
+        self.install_thread = PackageInstallThread(pip_path, str(requirements_file))
+
+        self.install_thread.output_signal.connect(self._on_install_progress)
+        self.install_thread.finished_signal.connect(self._on_install_finished)
+
+        self.install_thread.start()
+        print("Installing dependencies")
+
+    def _on_install_progress(self, message):
+        print(message)
+
+    def _on_install_finished(self, success):
+        if success:
+            print("Package install was a success.")
+        else:
+            print("Package install failed.")
+    
     def prompt_new_project_on_launch(self):
         dialog = WelcomeDialog(self)
         dialog.exec()

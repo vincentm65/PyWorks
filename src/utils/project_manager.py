@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from typing import Optional
-from src.core.venv_manager import VenvManager
+from core.venv_manager import VenvManager
 
 
 # Default template with example nodes

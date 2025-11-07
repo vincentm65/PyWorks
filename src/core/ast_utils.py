@@ -61,7 +61,20 @@ def extract_function_with_imports(file_path: Path, function_name: str) -> str:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             import_lines.append(ast.get_source_segment(file_content, node))
         elif isinstance(node, ast.FunctionDef) and node.name == function_name:
-            function_lines.append(ast.get_source_segment(file_content, node))
+            decorator_lines = []
+            for decorator in node.decorator_list:
+                decorator_segment = ast.get_source_segment(file_content, decorator)
+                decorator_lines.append(f"@{decorator_segment}")
+            
+            function_segment = ast.get_source_segment(file_content, node)
+
+            full_function = (
+                '\n'.join(decorator_lines) + '\n' + function_segment
+                if decorator_lines
+                else function_segment
+            )
+
+            function_lines.append(full_function)
 
     if not function_lines:
         return ""
