@@ -253,20 +253,20 @@ class MainWindow(QMainWindow):
         pip_path = self.venv_manager.get_pip_path()
         self.install_thread = PackageInstallThread(pip_path, str(requirements_file))
 
-        self.install_thread.output_signal.connect(self._on_install_progress)
+        self.install_thread.output_signal.connect(self.console.write) 
         self.install_thread.finished_signal.connect(self._on_install_finished)
 
+        self.console.write("=== Installing dependencies ===") 
         self.install_thread.start()
-        print("Installing dependencies")
 
-    def _on_install_progress(self, message):
-        print(message)
 
     def _on_install_finished(self, success):
         if success:
-            print("Package install was a success.")
+            self.console.write("=== Installation complete  ===")
+            self.status_bar.show_temporary_message("Dependencies installed", 3000)
         else:
-            print("Package install failed.")
+            self.console.write("=== Installation failed  ===")
+            self.status_bar.show_temporary_message("Installation failed", 3000)
     
     def prompt_new_project_on_launch(self):
         dialog = WelcomeDialog(self)
@@ -282,8 +282,12 @@ class MainWindow(QMainWindow):
             return
 
         try:
+            if not self.venv_manager:
+                python_path = None
+            else:
+                python_path = self.venv_manager.get_python_path()
             # Discover nodes from the project
-            self.node_registry.discover(Path(self.current_project_path))
+            self.node_registry.discover(Path(self.current_project_path), python_path)
 
             # Update the Node List UI
             if self.node_list_widget:

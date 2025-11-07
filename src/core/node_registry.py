@@ -17,8 +17,9 @@ class NodeRegistry:
     def __init__(self):
         self.nodes: dict[str, NodeMetadata] = {}
     
-    def discover(self, project_path: Path):
+    def discover(self, project_path: Path, python_path: str = None):
         self.nodes.clear()
+        self.python_path = python_path
         for file in (project_path / "nodes").glob("*.py"):
             category = file.stem
             extracted_nodes = ast_utils.extract_nodes_from_file(file, category)

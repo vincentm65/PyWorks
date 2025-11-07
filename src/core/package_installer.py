@@ -4,7 +4,6 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 class PackageInstallThread(QThread):
     output_signal = pyqtSignal(str)
-    progress_signal = pyqtSignal(int)
     finished_signal = pyqtSignal(bool)
 
     def __init__(self, pip_path, requirements):
@@ -42,11 +41,6 @@ class PackageInstallThread(QThread):
         installed_count = 0
         for line in install_process.stdout:
             self.output_signal.emit(line.strip())
-
-            if "Collecting" in line or "Successfully installed" in line:
-                installed_count += 1
-                percentage = int((installed_count/self.package_count) * 100)
-                self.progress_signal.emit(percentage)
 
         install_process.wait()
 
