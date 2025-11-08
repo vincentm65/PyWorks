@@ -1,6 +1,7 @@
 import sys
 import shutil
 from pathlib import Path
+import json
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction, QShortcut, QKeySequence
@@ -18,6 +19,7 @@ from utils.layout_manager import LayoutManager
 from core.node_registry import NodeRegistry
 from core.venv_manager import VenvManager
 from core.package_installer import PackageInstallThread
+from core.executor import WorkflowExecutor
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -38,6 +40,7 @@ class MainWindow(QMainWindow):
 
         self.venv_manager = None
         self.install_thread = None
+        self.executor = None
 
         # Connect canvas node double-click signal to editor
         self.canvas.scene.nodeDoubleClicked.connect(self._on_node_double_clicked)
@@ -307,15 +310,44 @@ class MainWindow(QMainWindow):
         else:
             print(f"Error: Metadata not found for {fqnn}")
 
+    def run(self):
+        if not self.current_project_path:
+            return
+        self.run_workflow()
+
+    def run_workflow(self):
+        # Load Json
+        self.layout_path = self.current_project_path / ".layout.json"
+        with open(self.layout_path, 'r', encoding='utf-8') as f:
+            self.layout_data = json.load(f)
+        
+        # Validate venv
+        if self.venv_manager is None:
+            return
+
+        # Create executor
+        self.executor = WorkflowExecutor(self.current_project_path, self.layout_data, self.venv_manager, self.node_registry)
+
+        # Create signals
+        self.executor.output_signal.connect(self.console.write)
+        self.executor.status_signal.connect(self.status_bar.show_temporary_message)
+        self.executor.finished_signal.connect(self._on_execution_finished)
+
+        self.executor.start()
+
+    def _on_execution_finished(self, success, message):
+        self.console.write(message + "\n")
+        self.executor = None
+        self.status_bar.show_temporary_message(message)
+
+
+
     # Placeholder actions - to be implemented
     def undo(self):
         print("Undo")
 
     def redo(self):
         print("Redo")
-
-    def run(self):
-        print("Run")
 
     def pause(self):
         print("Pause")

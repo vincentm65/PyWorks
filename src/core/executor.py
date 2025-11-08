@@ -90,8 +90,7 @@ class WorkflowExecutor(QThread):
 
             node_code.append(code)
 
-        script = f"""
-        import sys
+        script = f"""import sys
         sys.path.insert(0, '{self.project_path}')
 
         {imports}
@@ -120,6 +119,8 @@ class WorkflowExecutor(QThread):
 
         output_lines = []
 
+        
+
         for line in process.stdout:
             self.output_signal.emit(line.rstrip())
             output_lines.append(line.rstrip())
@@ -128,5 +129,6 @@ class WorkflowExecutor(QThread):
 
         success = (process.returncode == 0)
         all_output = '\n'.join(output_lines)
+        print(f"Output Lines: {output_lines}")
         return (success, all_output)
 
