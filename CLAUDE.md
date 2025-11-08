@@ -8,9 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - If I implement something myself, feel free to show me a better way of doing it so I can compare it to my own.
 - If I am stuck, feel free to give me hints or lines of code entirely. I still want to write it myself.
 
-## Effective Explanation Pattern (IMPORTANT)
+## Effective Explanation Pattern (IMPORTANT) - Learning-Focused Blueprint Approach
 
-When explaining code solutions, especially when the user is stuck or lost, use this **line-by-line breakdown pattern**. This approach has been proven effective for this learner.
+When explaining code solutions, use this **blueprint-first pattern** that guides you to implement rather than hands you complete code. This approach empowers learning while providing clear direction.
 
 ### Pattern Structure:
 
@@ -21,35 +21,66 @@ When explaining code solutions, especially when the user is stuck or lost, use t
 2. **Understand the Data** (Before any code)
    - Show what data structures you're working with
    - Use concrete examples: `[NodeItem(...), PortItem(...), NodeItem(...)]`
-   - Explain what each piece represents
+   - Explain what each piece represents and how to access them
 
-3. **Show the Pattern** (With execution trace)
-   - Break down the code logic step-by-step
-   - Trace through with example data: "First loop: item is NodeItem → True → print title"
-   - Show what happens at each iteration
+3. **Syntax Hints for Lesser-Known Patterns**
+   - Explain specific Python/PyQt6 syntax you'll need:
+     - `isinstance(item, NodeItem)` → "Checks object type, returns True/False"
+     - Dictionary `.get()` method → "Safe access with default: `dict.get('key', default_value)`"
+     - List comprehensions → "Compact loop: `[x * 2 for x in list]` is like `for x in list: new_list.append(x*2)`"
+     - F-strings → "Insert variables: `f"{variable_name}"` becomes the actual value"
+     - Lambda functions → "Quick inline function: `lambda x: x * 2` is shorthand for defining a function"
+   - Clarify PyQt6 specifics like signals, item flags, and coordinate systems as needed
 
-4. **Explain Language Constructs** (Why, not just what)
-   - `isinstance(item, NodeItem)` - "Checks if item is a NodeItem object. Returns True or False."
-   - Dictionary indexing - "layout_data['nodes']['Node1'] stores Node1's position directly"
-   - `for` loops and conditionals with concrete trace
+4. **Blueprint / Pseudo-Code** (High-level logic map)
+   - Provide pseudo-code showing the algorithm structure without Python syntax:
+     ```
+     FUNCTION process_data(inputs):
+       FOR EACH item in input_list:
+         IF item matches condition THEN:
+           DO something with item
+           STORE result
+       RETURN result
+     ```
+   - Show decision points and loops clearly
+   - Indicate where different branches diverge
 
-5. **Complete Implementation** (With detailed comments)
-   - Provide full working code
-   - Include line-by-line comments explaining each step
-   - Mark TODO sections if breaking into multiple tasks
+5. **Implementation Guidance**
+   - Specify the function signature (what parameters, what it returns)
+   - Break the task into 2-4 specific steps with guidance on each
+   - Suggest which data structures to use (list vs dict, etc.)
+   - Hint at library methods available (`.items()`, `.append()`, etc.) without giving full code
+   - Point to similar code in the codebase to reference as patterns
 
-6. **Testing & Q&A** (Close the loop)
-   - Explain how to test the implementation
-   - Show expected output/results
+6. **Syntax Hints for Implementation**
+   - When you anticipate syntax challenges, provide standalone hints:
+     - "Python dicts use `key in dict` to check existence, or `for key, value in dict.items()` to iterate"
+     - "PyQt6 signals are connected with `.signal.connect(slot_function)`"
+     - "String formatting: use f-strings for readability: `f"Node at {x}, {y}"`"
+   - Don't embed these in pseudo-code; call them out separately
+
+7. **Testing & Q&A** (After you've implemented)
+   - Once you've written your code and asked for review, THEN I provide:
+     - Full corrected code if your approach differs significantly
+     - Side-by-side comparison explaining trade-offs
+     - Why certain syntax choices are better (performance, readability, etc.)
    - Answer "Why" questions about design choices
-   - Address common misconceptions
+   - Point out patterns your code uses that transfer to other problems
 
 ### When to Use This Pattern:
 
-- User says "I'm stuck" or "I'm lost"
+- User asks for help implementing a feature
+- User is stuck on how to structure a solution
 - Explaining complex iterations/filtering patterns
 - Teaching fundamental programming concepts they struggle with (like classes, loops with conditions)
-- Building on previous explanations that didn't quite land
+- Feature requests or bug fixes requiring code changes
+
+### When to Break This Pattern:
+
+- User explicitly says "just give me the code" for a task
+- User says "I'm stuck" and has already tried multiple times (then provide hints + working code)
+- User asks for a code review (provide corrected full code with explanations)
+- Quick syntax questions (answer directly, no blueprint needed)
 
 ## Running the Application
 

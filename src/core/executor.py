@@ -5,7 +5,7 @@ from pathlib import Path
 class WorkflowExecutor(QThread):
     output_signal = pyqtSignal(str)
     status_signal = pyqtSignal(str)
-    finished_signal = pyqtSignal(bool)
+    finished_signal = pyqtSignal(bool, str)
     
     def __init__(self, project_path, layout_data, venv_manager, node_registry):
         super().__init__()
@@ -33,7 +33,7 @@ class WorkflowExecutor(QThread):
                 graph_builder.all_nodes
             )
 
-            self.signal_status.emit(f"Executing {len(sorted_nodes)} nodes...")
+            self.status_signal.emit(f"Executing {len(sorted_nodes)} nodes...")
             
             script = self._generate_execution_script(
                 sorted_nodes,
@@ -55,14 +55,78 @@ class WorkflowExecutor(QThread):
             self.finished_signal.emit(False, str(e))
 
     def _build_imports(self)-> str:
-        imports = {}
+        imports = []
 
-        for node_key in self.all_nodes:
-            fqnn = node_key.rsplit('_', 2)[0]
+        for fqnn, metadata in self.node_registry.nodes.items():
+            parts = fqnn.split(".")
+            module_name = parts[0]
+            func_name = parts[1]
 
-            meta_data = self.node_registry.get_metadata(fqnn)
+            safe_name = fqnn.replace(".", "_")
 
-        for node_key in self.node_registry.nodes.items():
-            fqnn = node_key.rsplit('_', 2)[0]
+            statement = f"from nodes.{module_name} import {func_name} as {safe_name}"
+            imports.append(statement)
 
-        
+        return '\n'.join(imports)
+
+    def _generate_execution_script(self, sorted_nodes: list, data_graph: dict, flow_graph: dict) -> str:
+        imports = self._build_imports()
+
+        node_code = []
+
+        for node_key in sorted_nodes:
+            code = "try:\n"
+            code += "   inputs = {}\n"
+
+            for parent_key, port in data_graph.get(node_key, []):
+                parent_title = parent_key.rsplit('_', 2)[0]
+                code += f"  inputs['{parent_title}'] = node_outputs.get('{parent_key}', {{}})\n"
+
+            safe_name = node_key.rsplit('_', 2)[0].replace('.', '_')
+            code += f"    result = {safe_name}(inputs, global_state)\n"
+            code += f"    node_outputs['{node_key}'] = result\n"
+            code += f"except Exception as e:\n"
+            code += f"    node_errors['{node_key}'] = str(e)\n"
+
+            node_code.append(code)
+
+        script = f"""
+        import sys
+        sys.path.insert(0, '{self.project_path}')
+
+        {imports}
+
+        global_state = {{}}
+        node_outputs = {{}}
+        node_errors = {{}}
+
+        {''.join(node_code)}
+
+        print(f"[SUMMARY] Done")
+        sys.exit(0 if len(node_errors) == 0 else 1)
+        """
+
+        return script
+
+    def _run_subprocess(self, script: str) -> tuple[bool, str]:
+        self.python = self.venv_manager.get_python_path()
+
+        process = subprocess.Popen([self.python, '-c', script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            cwd=str(self.project_path)
+        ) 
+
+        output_lines = []
+
+        for line in process.stdout:
+            self.output_signal.emit(line.rstrip())
+            output_lines.append(line.rstrip())
+
+        process.wait()
+
+        success = (process.returncode == 0)
+        all_output = '\n'.join(output_lines)
+        return (success, all_output)
+
