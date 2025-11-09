@@ -76,11 +76,11 @@ class WorkflowExecutor(QThread):
 
         for node_key in sorted_nodes:
             code = "try:\n"
-            code += "   inputs = {}\n"
+            code += "    inputs = {}\n"
 
             for parent_key, port in data_graph.get(node_key, []):
                 parent_title = parent_key.rsplit('_', 2)[0]
-                code += f"  inputs['{parent_title}'] = node_outputs.get('{parent_key}', {{}})\n"
+                code += f"    inputs['{parent_title}'] = node_outputs.get('{parent_key}', {{}})\n"
 
             safe_name = node_key.rsplit('_', 2)[0].replace('.', '_')
             code += f"    result = {safe_name}(inputs, global_state)\n"
@@ -102,7 +102,6 @@ node_errors = {{}}
 
 {''.join(node_code)}
 
-print(f"[SUMMARY] Done")
 sys.exit(0 if len(node_errors) == 0 else 1)
 """
 
