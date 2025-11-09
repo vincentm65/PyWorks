@@ -90,20 +90,21 @@ class WorkflowExecutor(QThread):
 
             node_code.append(code)
 
-        script = f"""import sys
-        sys.path.insert(0, '{self.project_path}')
+        script = f"""
+import sys
+sys.path.insert(0, "{self.project_path.as_posix()}")
 
-        {imports}
+{imports}
 
-        global_state = {{}}
-        node_outputs = {{}}
-        node_errors = {{}}
+global_state = {{}}
+node_outputs = {{}}
+node_errors = {{}}
 
-        {''.join(node_code)}
+{''.join(node_code)}
 
-        print(f"[SUMMARY] Done")
-        sys.exit(0 if len(node_errors) == 0 else 1)
-        """
+print(f"[SUMMARY] Done")
+sys.exit(0 if len(node_errors) == 0 else 1)
+"""
 
         return script
 
@@ -129,6 +130,6 @@ class WorkflowExecutor(QThread):
 
         success = (process.returncode == 0)
         all_output = '\n'.join(output_lines)
-        print(f"Output Lines: {output_lines}")
+
         return (success, all_output)
 
