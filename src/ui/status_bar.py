@@ -82,6 +82,9 @@ class StatusBarWidget(QStatusBar):
     def show_temporary_message(self, text, timeout_ms=2000):
         self.showMessage(text, timeout_ms)
 
+    def set_status(self, text):
+        self.status_label.setText(text)
+
     def reset_to_defaults(self):
         self.status_label.setText("🟢 Ready")
         self.project_label.setText("No project")

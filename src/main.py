@@ -1,5 +1,6 @@
 import sys
 import shutil
+import time
 from pathlib import Path
 import json
 
@@ -45,15 +46,17 @@ class MainWindow(QMainWindow):
         # Connect canvas node double-click signal to editor
         self.canvas.scene.nodeDoubleClicked.connect(self._on_node_double_clicked)
 
-        # Connect zoom and selection signals
-        self.canvas.zoom_changed.connect(self.status_bar.update_zoom)
-        self.canvas.scene.selectionChanged.connect(
-            lambda: self.status_bar.update_selection(self.canvas.scene)
-        )
-
-        self.canvas.view_changed.connect(
+        # Connect zoom and selection signals.
+        try:
+            self.canvas.zoom_changed.connect(self.status_bar.update_zoom)
+            self.canvas.scene.selectionChanged.connect(
+                lambda: self.status_bar.update_selection(self.canvas.scene)
+            )
+            self.canvas.view_changed.connect(
             lambda: self.status_bar.update_coordinates(self.canvas)
-        )
+            )
+        except RuntimeError:
+            return # In event we try and update when closing the app.
 
         QShortcut(QKeySequence("Ctrl+S"), self, activated=self.save)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.open_file)
@@ -330,7 +333,7 @@ class MainWindow(QMainWindow):
 
         # Create signals
         self.executor.output_signal.connect(self.console.write)
-        self.executor.status_signal.connect(self.status_bar.show_temporary_message)
+        self.executor.status_signal.connect(self.status_bar.set_status)
         self.executor.finished_signal.connect(self._on_execution_finished)
 
         self.executor.start()
@@ -338,7 +341,8 @@ class MainWindow(QMainWindow):
     def _on_execution_finished(self, success, message):
         self.console.write(message + "\n")
         self.executor = None
-        self.status_bar.show_temporary_message(message)
+        self.status_bar.set_status(message)
+        self.status_bar.set_status("🟢 Ready")
 
 
 

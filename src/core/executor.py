@@ -25,7 +25,7 @@ class WorkflowExecutor(QThread):
             graph_builder.build()
 
             if graph_builder.has_cycle():
-                self.finished_signal.emit(False, "Cycle detected in FLOW graph - execution canceled!")
+                self.finished_signal.emit(False, "🔴 Cycle detected in FLOW graph - execution canceled!")
                 return
             
             sorted_nodes = topological_sort(
@@ -33,7 +33,7 @@ class WorkflowExecutor(QThread):
                 graph_builder.all_nodes
             )
 
-            self.status_signal.emit(f"Executing {len(sorted_nodes)} nodes...")
+            self.status_signal.emit(f"🔵 Running: Executing {len(sorted_nodes)} nodes...")
             
             script = self._generate_execution_script(
                 sorted_nodes,
@@ -47,7 +47,7 @@ class WorkflowExecutor(QThread):
                 self.status_signal.emit("Execution completed successfully")
                 self.finished_signal.emit(True, "Workflow completed successfully")
             else:
-                self.status_signal.emit("Execution failed")
+                self.status_signal.emit("🔴 Execution failed")
                 self.finished_signal.emit(False, "Workflow failed - check console for errors")
 
         except Exception as e:

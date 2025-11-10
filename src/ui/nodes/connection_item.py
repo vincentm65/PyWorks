@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QGraphicsPathItem, QStyle
-from PyQt6.QtCore import QPointF, Qt
-from PyQt6.QtGui import QPen, QColor, QPainterPath
+from PyQt6.QtCore import QPointF, Qt, QTimer
+from PyQt6.QtGui import QPen, QColor, QPainterPath, QPainter
 
 from ui.nodes.port import PortItem
 from ui.nodes.node_item import NodeItem
@@ -8,6 +8,12 @@ from ui.nodes.node_item import NodeItem
 class ConnectionBridge(QGraphicsPathItem):
     def __init__(self, source_port, target_port, parent = None):
         super().__init__(parent)
+
+        # Animation init
+        self.offset = 1000
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_animation)
+        self.timer.start(30)
 
         # Normalize ports
         if source_port.port_direction == "IN":
@@ -23,7 +29,9 @@ class ConnectionBridge(QGraphicsPathItem):
             pen = QPen(QColor(110, 110, 110), 2)
         elif source_port.port_type == "DATA":
             pen = QPen(QColor(138, 43, 226), 2)
-       
+
+        pen.setDashPattern([5, 5])
+        pen.setDashOffset(float(self.offset))
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
         self.setPen(pen)
@@ -33,6 +41,11 @@ class ConnectionBridge(QGraphicsPathItem):
         self.update_path()
 
     def paint(self, painter, option, widget):
+
+        pen = QPen(self.pen())
+        pen.setDashOffset(float(self.offset))
+        self.setPen(pen)
+
         is_selected = option.state & QStyle.StateFlag.State_Selected
         if self.is_hovered or is_selected:
             if self.source_port.port_type == "FLOW":
@@ -57,6 +70,13 @@ class ConnectionBridge(QGraphicsPathItem):
     def update_path(self,):
         path = self.create_orthoganal_path()
         self.setPath(path)
+
+    def update_animation(self):
+        self.offset -= 1
+        if self.offset < 10:
+            self.offset = 1000 
+        
+        self.update()
     
     @staticmethod
     def create_orthogonal_path_between_points(start_point, end_point, port_type, source_y, target_y):
