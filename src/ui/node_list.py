@@ -80,6 +80,7 @@ class NodeListWidget(QTreeWidget):
             actions = [
                 (f"Expand '{name}'", lambda: item.setExpanded(True)),
                 (f"Collapse '{name}'", lambda: item.setExpanded(False)),
+                ("Add New Node", lambda: self.handle_add_node(name)),
                 (f"Delete Category '{name}'", lambda: self.handle_delete_category(name)),
             ]
 
@@ -87,8 +88,7 @@ class NodeListWidget(QTreeWidget):
             # --- Child node ---
             name = item.text(0)
             actions = [
-                (f"Info for '{name}'", lambda: self.handle_item_info(name)),
-                (f"Delete '{name}'", lambda: self.handle_item_delete(name)),
+                (f"Delete '{name}'", lambda: self.handle_delete_item(name)),
             ]
 
         # Add main actions to menu
@@ -106,7 +106,7 @@ class NodeListWidget(QTreeWidget):
     def handle_empty_space_action(self):
         self.main_window.reload_script()
 
-    def handle_add_category(self, project_path):
+    def handle_add_category(self):
         # Ask user for name of new file
         name, ok = QInputDialog.getText(self, "New Node", "Enter name for new node:")
         if not ok or not name.strip():
@@ -125,14 +125,38 @@ class NodeListWidget(QTreeWidget):
         file_path.write_text(STARTER_TEXT)
 
         QMessageBox.information(self, "Node Created", f"Created: {file_path}")
+        self.handle_empty_space_action()
 
-    def handle_delete_category(self, category_name):
-        print(f"Deleted category: {category_name}")
+    def handle_add_node(self, name):
+        # Build path to nodes directory
+        nodes_dir = self.project_path
+        nodes_dir.mkdir(parents=True, exist_ok=True)
 
-    def handle_item_info(self, item_text):
-        print(f"Info for item: {item_text}")
+        file_path = nodes_dir / f"{name}.py"
+        print(f"The python file: {file_path}")
+        if file_path.exists():
+            with file_path.open("a", encoding="utf-8") as f:
+                f.write("\n# Added new function\n")
+                f.write("@node\n")
+                f.write("def new_feature():\n")
+                f.write("    print('New feature added!')\n")
+        else:
+            print("File not found.")
 
-    def handle_item_delete(self, item_text):
+    def handle_delete_category(self, name):
+        nodes_dir = self.project_path
+        nodes_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = nodes_dir / f"{name}.py"
+
+        if file_path.exists():
+            file_path.unlink()  # deletes the file
+            print(f"Deleted {file_path}")
+            self.handle_empty_space_action()
+        else:
+            print("File not found.")
+
+    def handle_delete_item(self, item_text):
         print(f"Deleted item: {item_text}")
 
     def handle_global_action(self):
