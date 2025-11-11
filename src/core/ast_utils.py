@@ -143,3 +143,37 @@ def extract_function_signature(func_node: ast.FunctionDef) -> str:
     for item in func_node.args.args:
         func_node_args.append(item.arg)
     return f"({", ".join(func_node_args)})"
+
+def delete_function_from_file(file_path: Path, function_name: str) -> bool:
+    if not file_path.exists():
+        print(f"File not found: {file_path}")
+        return False
+
+    source = file_path.read_text(encoding="utf-8")
+    try:
+        tree = ast.parse(source)
+    except SyntaxError as e:
+        print(f"Syntax error in {file_path}: {e}")
+        return False
+
+    new_body = []
+    removed = False
+
+    for node in tree.body:
+        # Skip the function we want to delete
+        if isinstance(node, ast.FunctionDef) and node.name == function_name:
+            removed = True
+            continue
+        new_body.append(node)
+
+    if not removed:
+        print(f"Function '{function_name}' not found in {file_path}")
+        return False
+
+    tree.body = new_body
+    new_code = ast.unparse(tree)
+    file_path.write_text(new_code, encoding="utf-8")
+
+    print(f"Deleted function '{function_name}' from {file_path}")
+    return True
+

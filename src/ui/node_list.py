@@ -4,6 +4,8 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QInputDialog, QTreeWidget
 from PyQt6.QtCore import Qt, QMimeData, QPoint
 from PyQt6.QtGui import QDrag
 
+from core.ast_utils import delete_function_from_file
+
 STARTER_TEXT = '''
 import sys
 
@@ -87,8 +89,9 @@ class NodeListWidget(QTreeWidget):
         else:
             # --- Child node ---
             name = item.text(0)
+            category = item.parent().text(0)
             actions = [
-                (f"Delete '{name}'", lambda: self.handle_delete_item(name)),
+                (f"Delete '{name}'", lambda: self.handle_delete_item(category, name)),
             ]
 
         # Add main actions to menu
@@ -141,18 +144,18 @@ class NodeListWidget(QTreeWidget):
         print(f"The python file: {file_path}")
         if file_path.exists():
             with file_path.open("a", encoding="utf-8") as f:
-                f.write("\n# Added new function\n")
+                f.write("\n\n")
                 f.write("@node\n")
-                f.write("def {func_name}(inputs, global_state):\n")
+                f.write(f"def {func_name}(inputs, global_state):\n")
                 f.write("    message = 'New feature added!'\n")
                 f.write("    return {'result': message}\n")
-
         else:
             print("File not found.")
 
+        self.handle_empty_space_action()
+
     def handle_delete_category(self, name):
         nodes_dir = self.project_path
-        nodes_dir.mkdir(parents=True, exist_ok=True)
 
         file_path = nodes_dir / f"{name}.py"
 
@@ -163,8 +166,22 @@ class NodeListWidget(QTreeWidget):
         else:
             print("File not found.")
 
-    def handle_delete_item(self, item_text):
-        print(f"Deleted item: {item_text}")
+    def handle_delete_item(self, category, name):
+        nodes_dir = self.project_path
+        nodes_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = nodes_dir / f"{name}.py"
+        file_path = nodes_dir / f"{category}.py"
+
+        if not file_path.exists():
+            print(f"File not found: {file_path}")
+            return
+
+        success = delete_function_from_file(file_path, name)
+
+        if success:
+            print(f"Deleted {name} from {file_path}")
+            self.handle_empty_space_action()
 
     def handle_global_action(self):
         print("Global action triggered")

@@ -64,7 +64,6 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(100, self.prompt_new_project_on_launch)
 
-
     def _create_toolbar(self):
         toolbar = QToolBar("Main Toolbar")
         self.addToolBar(toolbar)
@@ -84,7 +83,6 @@ class MainWindow(QMainWindow):
         self.reload_action = QAction("Reload Script", self)
         self.reload_action.triggered.connect(self.reload_script)
         toolbar.addAction(self.reload_action)
-
 
     def _create_menubar(self):
         file_menu = self.menuBar().addMenu("File")
@@ -127,7 +125,13 @@ class MainWindow(QMainWindow):
         ]:
             dock = QDockWidget(title, self)
             dock.setWidget(widget)
+
+            if area == Qt.DockWidgetArea.RightDockWidgetArea:
+                dock.setFixedWidth(800) 
+
             self.addDockWidget(area, dock)
+
+        
 
         self.status_bar = StatusBarWidget(self)
         self.setStatusBar(self.status_bar)
@@ -207,7 +211,6 @@ class MainWindow(QMainWindow):
         self.status_bar.show_temporary_message("✓ Project saved", 2000)
         print("Project Saved")
         
-
     def set_current_project_path(self, project_path):
         self.current_project_path = Path(project_path)
         self.project_name = get_project_name(self.current_project_path)
@@ -264,7 +267,6 @@ class MainWindow(QMainWindow):
 
         self.console.write("=== Installing dependencies ===") 
         self.install_thread.start()
-
 
     def _on_install_finished(self, success):
         if success:
@@ -343,8 +345,6 @@ class MainWindow(QMainWindow):
         self.executor = None
         self.status_bar.set_status(message)
         self.status_bar.set_status("🟢 Ready")
-
-
 
     # Placeholder actions - to be implemented
     def undo(self):
