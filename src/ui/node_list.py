@@ -4,6 +4,20 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QInputDialog, QTreeWidget
 from PyQt6.QtCore import Qt, QMimeData, QPoint
 from PyQt6.QtGui import QDrag
 
+STARTER_TEXT = '''
+import sys
+
+def node(func):
+    """Decorator to mark a function as a workflow node."""
+    func._is_workflow_node = True
+    return func
+
+@node
+def example(inputs, global_state):
+    message = "Hello World!"
+    return {"result": message}
+'''
+
 class NodeListWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -107,24 +121,10 @@ class NodeListWidget(QTreeWidget):
             QMessageBox.warning(self, "File Exists", f"{file_path.name} already exists.")
             return
 
-        starter_text = '''
-import sys
-
-def node(func):
-    """Decorator to mark a function as a workflow node."""
-    func._is_workflow_node = True
-    return func
-
-@node
-def example(inputs, global_state):
-    message = "Hello World!"
-    return {"result": message}
-'''
         # Generate the python file:
-        file_path.write_text(starter_text)
+        file_path.write_text(STARTER_TEXT)
 
         QMessageBox.information(self, "Node Created", f"Created: {file_path}")
-
 
     def handle_delete_category(self, category_name):
         print(f"Deleted category: {category_name}")
