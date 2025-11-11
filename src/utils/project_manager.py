@@ -10,6 +10,7 @@ Example Node Category
 
 Add your @node decorated functions here.
 """
+import sys
 
 def node(func):
     """Decorator to mark a function as a workflow node."""
@@ -18,7 +19,7 @@ def node(func):
 
 
 @node
-def example_node(inputs, global_state):
+def send_example(inputs, global_state):
     """
     Example node that demonstrates the basic structure.
 
@@ -29,15 +30,16 @@ def example_node(inputs, global_state):
     Returns:
         Dictionary of outputs for child nodes
     """
-    print("Example node executed")
-    return {"result": "Hello from example node"}
+    message = "Hello World!"
+    return {"result": message}
 
 
 @node
-def another_example(inputs, global_state):
-    """Another example node."""
-    data = inputs.get("example_node", {}).get("result", "")
-    print(f"Received: {data}")
+def receive_example(inputs, global_state):
+    print(f"All inputs {inputs}") # This is the dict structure that is passed in
+
+    data = inputs.get("example.send_example", {}).get("result", "")
+    print(f"Received: {data} from parent node")
     return {"processed": data.upper()}
 '''
 

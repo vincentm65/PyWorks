@@ -25,7 +25,7 @@ class WorkflowExecutor(QThread):
             graph_builder.build()
 
             if graph_builder.has_cycle():
-                self.finished_signal.emit(False, "🔴 Cycle detected in FLOW graph - execution canceled!")
+                self.finished_signal.emit(False, "Cycle detected in FLOW graph - execution canceled!")
                 return
             
             sorted_nodes = topological_sort(
@@ -33,7 +33,7 @@ class WorkflowExecutor(QThread):
                 graph_builder.all_nodes
             )
 
-            self.status_signal.emit(f"🔵 Running: Executing {len(sorted_nodes)} nodes...")
+            self.status_signal.emit(f"Executing {len(sorted_nodes)} nodes...")
             
             script = self._generate_execution_script(
                 sorted_nodes,
@@ -47,7 +47,7 @@ class WorkflowExecutor(QThread):
                 self.status_signal.emit("Execution completed successfully")
                 self.finished_signal.emit(True, "Workflow completed successfully")
             else:
-                self.status_signal.emit("🔴 Execution failed")
+                self.status_signal.emit("Execution failed")
                 self.finished_signal.emit(False, "Workflow failed - check console for errors")
 
         except Exception as e:
@@ -77,16 +77,20 @@ class WorkflowExecutor(QThread):
         for node_key in sorted_nodes:
             code = "try:\n"
             code += "    inputs = {}\n"
-
             for parent_key, port in data_graph.get(node_key, []):
-                parent_title = parent_key.rsplit('_', 2)[0]
-                code += f"    inputs['{parent_title}'] = node_outputs.get('{parent_key}', {{}})\n"
+                parent_name = parent_key.rsplit('_', 2)[0]
+                code += f"    inputs['{parent_name}'] = node_outputs.get('{parent_name}', {{}})\n"
 
-            safe_name = node_key.rsplit('_', 2)[0].replace('.', '_')
+            node_name = node_key.rsplit('_', 2)[0]
+            safe_name = node_name.replace('.', '_')
+
             code += f"    result = {safe_name}(inputs, global_state)\n"
-            code += f"    node_outputs['{node_key}'] = result\n"
-            code += f"except Exception as e:\n"
-            code += f"    node_errors['{node_key}'] = str(e)\n"
+            code += f"    node_outputs['{node_name}'] = result\n"
+            code += "except Exception as e:\n"
+            code += "    import traceback\n"
+            code += f"    tb = traceback.format_exc()\n"
+            code += f"    print(f'🔴 Error in {node_name}:', tb)\n"
+            code += f"    node_errors['{node_name}'] = str(e)\n"
 
             node_code.append(code)
 
@@ -102,6 +106,7 @@ node_errors = {{}}
 
 {''.join(node_code)}
 
+print(f"[SUMMARY] Done")
 sys.exit(0 if len(node_errors) == 0 else 1)
 """
 

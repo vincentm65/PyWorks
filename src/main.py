@@ -117,7 +117,7 @@ class MainWindow(QMainWindow):
 
         self.editor = EditorWidget()
         self.console = ConsoleWidget()
-        self.node_list_widget = NodeListWidget() 
+        self.node_list_widget = NodeListWidget(parent=self) 
         
 
         for widget, title, area in [
