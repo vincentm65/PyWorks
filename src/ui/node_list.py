@@ -108,7 +108,7 @@ class NodeListWidget(QTreeWidget):
 
     def handle_add_category(self):
         # Ask user for name of new file
-        name, ok = QInputDialog.getText(self, "New Node", "Enter name for new node:")
+        name, ok = QInputDialog.getText(self, "New file", "Enter name for new file:")
         if not ok or not name.strip():
             return
         # Build path to nodes directory
@@ -128,6 +128,11 @@ class NodeListWidget(QTreeWidget):
         self.handle_empty_space_action()
 
     def handle_add_node(self, name):
+        # Get name for function:
+        func_name, ok = QInputDialog.getText(self, "New Node", "Enter name for new node:")
+        if not ok or not func_name.strip():
+            return
+
         # Build path to nodes directory
         nodes_dir = self.project_path
         nodes_dir.mkdir(parents=True, exist_ok=True)
@@ -138,8 +143,10 @@ class NodeListWidget(QTreeWidget):
             with file_path.open("a", encoding="utf-8") as f:
                 f.write("\n# Added new function\n")
                 f.write("@node\n")
-                f.write("def new_feature():\n")
-                f.write("    print('New feature added!')\n")
+                f.write("def {func_name}(inputs, global_state):\n")
+                f.write("    message = 'New feature added!'\n")
+                f.write("    return {'result': message}\n")
+
         else:
             print("File not found.")
 
