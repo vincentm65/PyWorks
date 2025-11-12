@@ -68,7 +68,7 @@ class ConnectionBridge(QGraphicsPathItem):
         super().paint(painter, option, widget)
 
     def update_path(self,):
-        path = self.create_orthoganal_path()
+        path = self.create_orthogonal_path()
         self.setPath(path)
 
     def update_animation(self):
