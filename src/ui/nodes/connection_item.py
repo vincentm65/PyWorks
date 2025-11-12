@@ -118,7 +118,7 @@ class ConnectionBridge(QGraphicsPathItem):
         
         return path
 
-    def create_orthoganal_path(self):
+    def create_orthogonal_path(self):
         start_point = self.source_port.get_center_pos()
         end_point = self.target_port.get_center_pos()
         port_type = self.source_port.port_type
@@ -136,3 +136,8 @@ class ConnectionBridge(QGraphicsPathItem):
         self.is_hovered = False
         self.update()
         super().hoverLeaveEvent(event)
+
+    def __del__(self):
+        if hasattr(self, 'timer'):
+            self.timer.stop()
+            self.timer.deleteLater()

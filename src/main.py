@@ -1,6 +1,5 @@
 import sys
 import shutil
-import time
 from pathlib import Path
 import json
 import os
@@ -134,6 +133,8 @@ class MainWindow(QMainWindow):
             (self.console, "Console", Qt.DockWidgetArea.BottomDockWidgetArea, "ConsoleDock"),
         ]
 
+        self.node_list_widget.setMinimumWidth(200)
+
         for widget, title, area, obj_name in dock_info:
             dock = QDockWidget(title, self)
             dock.setWidget(widget)
@@ -169,6 +170,9 @@ class MainWindow(QMainWindow):
             print("Invalid PyWorks project folder.")
             return
 
+        for connection in self.canvas.scene.connections:
+            if hasattr(connection, 'timer'):
+                connection.timer.stop()
         self.canvas.scene.clear()
         self.canvas.scene.connections = []
         self.set_current_project_path(project_path)
@@ -244,6 +248,9 @@ class MainWindow(QMainWindow):
 
 
     def close_current_project(self):
+        for connection in self.canvas.scene.connections:
+            if hasattr(connection, 'timer'):
+                connection.timer.stop()
         self.canvas.scene.clear()
         self.canvas.scene.connections = []
         self.editor.clear()

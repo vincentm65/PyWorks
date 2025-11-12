@@ -1,6 +1,5 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit
-from PyQt6.QtGui import QPainter
 
 
 class ConsoleWidget(QTextEdit):

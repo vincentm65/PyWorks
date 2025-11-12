@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QMainWindow, QInputDialog, QTreeWidget, QTreeWidgetItem, QMenu, QMessageBox
 from PyQt6.QtCore import Qt, QMimeData, QPoint
@@ -53,7 +52,6 @@ class NodeListWidget(QTreeWidget):
                 category_group[cat] = []
             category_group[cat].append((fqnn, metadata))
             self.project_path = metadata.file_path.parent
-            print(self.project_path)
 
         # Build the tree
         for category, nodes in category_group.items():
@@ -141,7 +139,6 @@ class NodeListWidget(QTreeWidget):
         nodes_dir.mkdir(parents=True, exist_ok=True)
 
         file_path = nodes_dir / f"{name}.py"
-        print(f"The python file: {file_path}")
         if file_path.exists():
             with file_path.open("a", encoding="utf-8") as f:
                 f.write("\n\n")
@@ -170,7 +167,6 @@ class NodeListWidget(QTreeWidget):
         nodes_dir = self.project_path
         nodes_dir.mkdir(parents=True, exist_ok=True)
 
-        file_path = nodes_dir / f"{name}.py"
         file_path = nodes_dir / f"{category}.py"
 
         if not file_path.exists():

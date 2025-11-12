@@ -1,6 +1,6 @@
 import sys
 from core import ast_utils
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit
+from PyQt6.QtWidgets import QTextEdit
 from PyQt6.QtGui import QFont, QTextDocument, QTextCursor, QPainter, QPen, QColor, QFontMetrics
 from PyQt6.QtCore import Qt, QRect, QPoint
 
@@ -48,7 +48,7 @@ class EditorWidget(QTextEdit):
                         "background: transparent; "
                         "color: #f8f8f2; "
                         "font-family: Consolas, 'Fira Code', 'JetBrains Mono', monospace; "
-                        "font-size: 14pt;"
+                        "font-size: 12pt;"
                     )
                 )
             )

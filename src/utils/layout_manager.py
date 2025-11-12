@@ -1,6 +1,5 @@
-import sys
 import json
-from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QStyle
+from PyQt6.QtWidgets import QGraphicsItem, QStyle
 from PyQt6.QtCore import QRectF, QPointF, Qt
 
 from ui.nodes.node_item import NodeItem
