@@ -123,5 +123,3 @@ class EditorWidget(QTextEdit):
         self.current_metadata = None
         self.is_dirty = False
         self.setReadOnly(False)
-
-    def paintEvent(self, event):

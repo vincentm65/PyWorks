@@ -3,11 +3,12 @@ import shutil
 import time
 from pathlib import Path
 import json
+import os
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QByteArray
 from PyQt6.QtGui import QAction, QShortcut, QKeySequence
 from PyQt6.QtWidgets import (QDockWidget, QApplication, QMainWindow, QToolBar,
-                             QFileDialog, QInputDialog)
+                             QFileDialog, QInputDialog, QMessageBox)
 
 from ui.node_list import NodeListWidget
 from ui.canvas import CanvasGraphicsView
@@ -42,6 +43,11 @@ class MainWindow(QMainWindow):
         self.venv_manager = None
         self.install_thread = None
         self.executor = None
+
+        # Workspace handling
+        self.open_files = []
+        self.geometry_data = None
+        self.load_workspace_on_startup()
 
         # Connect canvas node double-click signal to editor
         self.canvas.scene.nodeDoubleClicked.connect(self._on_node_double_clicked)
@@ -90,7 +96,9 @@ class MainWindow(QMainWindow):
             ("New Project", self.new_file),
             ("Open", self.open_file),
             ("Save", self.save),
-            ("Save As", self.save_as)
+            ("Save As", self.save_as),
+            ("Save Workspace", self.save_workspace),
+            ("Load Workspace", self.load_workspace)
         ]:
             file_menu.addAction(name, slots)
         file_menu.addSeparator()
@@ -117,21 +125,21 @@ class MainWindow(QMainWindow):
         self.console = ConsoleWidget()
         self.node_list_widget = NodeListWidget(parent=self) 
         
+        self.docks = {}
 
-        for widget, title, area in [
-            (self.node_list_widget, "Node List", Qt.DockWidgetArea.LeftDockWidgetArea),
-            (self.editor, "Editor", Qt.DockWidgetArea.RightDockWidgetArea),
-            (self.console, "Console", Qt.DockWidgetArea.BottomDockWidgetArea),
-        ]:
+        # Create docks and add to registry
+        dock_info = [
+            (self.node_list_widget, "Node List", Qt.DockWidgetArea.LeftDockWidgetArea, "NodeListDock"),
+            (self.editor, "Editor", Qt.DockWidgetArea.RightDockWidgetArea, "EditorDock"),
+            (self.console, "Console", Qt.DockWidgetArea.BottomDockWidgetArea, "ConsoleDock"),
+        ]
+
+        for widget, title, area, obj_name in dock_info:
             dock = QDockWidget(title, self)
             dock.setWidget(widget)
-
-            if area == Qt.DockWidgetArea.RightDockWidgetArea:
-                dock.setFixedWidth(800) 
-
+            dock.setObjectName(obj_name)
             self.addDockWidget(area, dock)
-
-        
+            self.docks[obj_name] = dock
 
         self.status_bar = StatusBarWidget(self)
         self.setStatusBar(self.status_bar)
@@ -214,22 +222,26 @@ class MainWindow(QMainWindow):
     def set_current_project_path(self, project_path):
         self.current_project_path = Path(project_path)
         self.project_name = get_project_name(self.current_project_path)
-
         self.setWindowTitle(f"PyWorks - {self.project_name}")
+
+        # Reload scripts
         self.reload_script()
 
+        # Load project layout if it exists
         layout_path = self.current_project_path / ".layout.json"
         if layout_path.exists():
             self.layout_manager.load_layout(self.canvas.scene, str(layout_path))
-            self.run_action.setEnabled(True)
-            self.pause_action.setEnabled(True)
-            self.stop_action.setEnabled(True)
-            self.install_deps_action.setEnabled(True)
 
-            print(f"Loaded project from {layout_path}")
+        # Enable actions
+        self.run_action.setEnabled(True)
+        self.pause_action.setEnabled(True)
+        self.stop_action.setEnabled(True)
+        self.install_deps_action.setEnabled(True)
 
+        # Update status bar
         self.status_bar.update_project(self.project_name)
         self.status_bar.update_canvas_stats(self.canvas.scene)
+
 
     def close_current_project(self):
         self.canvas.scene.clear()
@@ -345,6 +357,68 @@ class MainWindow(QMainWindow):
         self.executor = None
         self.status_bar.set_status(message)
         self.status_bar.set_status("🟢 Ready")
+
+    def save_workspace(self):
+        """Save window geometry, dock layout, and current project path."""
+        data = {
+            "geometry": self.saveGeometry().toBase64().data().decode(),
+            "window_state": self.saveState().toBase64().data().decode(),
+            "current_project": str(self.current_project_path) if self.current_project_path else None,
+        }
+
+        file_name, _ = QFileDialog.getSaveFileName(
+            self, "Save Workspace", "", "Workspace Files (*.workspace)"
+        )
+        if not file_name:
+            return
+
+        with open(file_name, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+        self.status_bar.show_temporary_message("✓ Workspace saved", 2000)
+
+    def load_workspace(self, path=None):
+        """
+        Load workspace from file. 
+        If path is None, open a file dialog for user selection.
+        """
+        # If no path is given, ask the user
+        if path is None:
+            path, _ = QFileDialog.getOpenFileName(
+                self, "Load Workspace", "", "Workspace Files (*.workspace)"
+            )
+            if not path:
+                return  # user cancelled
+
+        # Load workspace file
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            return
+
+        # Make sure all docks are reattached before restore
+        for dock in self.docks.values():
+            if dock not in self.findChildren(QDockWidget):
+                self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
+
+        # Restore window geometry & state
+        self.restoreGeometry(QByteArray.fromBase64(bytes(data["geometry"], "utf-8")))
+        self.restoreState(QByteArray.fromBase64(bytes(data["window_state"], "utf-8")))
+
+        # Re-show any docks that got closed or hidden
+        for dock in self.docks.values():
+            if not dock.isVisible():
+                dock.show()
+
+    def load_workspace_on_startup(self):
+        # Otherwise, use the application directory
+        app_dir = Path(os.path.dirname(sys.argv[0])).parent  # go up one level
+        default_path = app_dir / "default.workspace"
+        print(default_path)
+
+        if default_path.exists():
+            self.load_workspace(str(default_path))
 
     # Placeholder actions - to be implemented
     def undo(self):
