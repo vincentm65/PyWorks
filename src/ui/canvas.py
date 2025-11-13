@@ -35,6 +35,9 @@ class CanvasGraphicsView(QGraphicsView):
         self.max_zoom = 5.0
         self.current_scale = 1.0
 
+        # Listen for running status
+        self.isExecuting = False
+
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
             zoom = self.zoom_factor
@@ -53,6 +56,10 @@ class CanvasGraphicsView(QGraphicsView):
     def scrollContentsBy(self, dx, dy):
       super().scrollContentsBy(dx, dy)
       self.view_changed.emit()
+
+    def set_executing(self, is_executing: bool):
+        self.is_executing = is_executing
+        self.update
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -99,14 +106,21 @@ class CanvasGraphicsScene(QGraphicsScene):
         self.connection_start_port = None
         self.is_drawing_connection = False
         self.connections = []
+        self.nodes_by_id = {}
 
     def addItem(self, item):
         """Override addItem to connect NodeItem signals."""
         super().addItem(item)
         # Connect nodeDoubleClicked signal from NodeItem to scene signal
         if isinstance(item, NodeItem):
+            self.nodes_by_id[item.fqnn] = item
             item.nodeDoubleClicked.connect(self.nodeDoubleClicked.emit)
 
+    def set_node_highlight(self, node_id: str, state: bool):
+        node_to_higlight = self.node_by_id.get(node_id)
+        if node_to_higlight:
+            node_to_higlight.set_executing(state)
+        
     def drawBackground(self, painter, rect):
         path = QPainterPath()
         path.addRoundedRect(rect, self.radius, self.radius)

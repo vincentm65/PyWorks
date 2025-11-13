@@ -356,10 +356,22 @@ class MainWindow(QMainWindow):
         self.executor.output_signal.connect(self.console.write)
         self.executor.status_signal.connect(self.status_bar.set_status)
         self.executor.finished_signal.connect(self._on_execution_finished)
+        self.executor.active_node_signal.connect(self._on_node_executing)
 
         self.executor.start()
+    
+    def _on_node_executing(self, node_id):
+        if self.current_highlight:
+            self.canvas.set_node_highlight(self.current_highlight, False)
+        
+        self.canvas.set_node_highlight(node_id, True)
+        self.current_highlight = node_id
+
 
     def _on_execution_finished(self, success, message):
+        if self.current_highlight:
+            self.canvas.set_node_highlight(self.current_highlight, False)
+        
         self.console.write(message + "\n")
         self.executor = None
         self.status_bar.set_status(message)

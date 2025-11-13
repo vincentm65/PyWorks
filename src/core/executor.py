@@ -4,6 +4,7 @@ from pathlib import Path
 
 class WorkflowExecutor(QThread):
     output_signal = pyqtSignal(str)
+    active_node_signal = pyqtSignal(str)
     status_signal = pyqtSignal(str)
     finished_signal = pyqtSignal(bool, str)
     
@@ -75,7 +76,8 @@ class WorkflowExecutor(QThread):
         node_code = []
 
         for node_key in sorted_nodes:
-            code = "try:\n"
+            code = f"print(f'__PYWORKS_EXEC_NODE__:{node_key}')\n"
+            code += "try:\n"
             code += "    inputs = {}\n"
             for parent_key, port in data_graph.get(node_key, []):
                 parent_name = parent_key.rsplit('_', 2)[0]
@@ -127,6 +129,9 @@ sys.exit(0 if len(node_errors) == 0 else 1)
         
 
         for line in process.stdout:
+            if line.startswith("__PYWORKS_EXEC_NODE__"):
+                node_id = line.strip().split(":")[1]
+                self.active_node_signal.emit(node_id)
             self.output_signal.emit(line.rstrip())
             output_lines.append(line.rstrip())
 
