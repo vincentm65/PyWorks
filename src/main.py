@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
         self.venv_manager = None
         self.install_thread = None
         self.executor = None
+        self.current_highlight = None
 
         # Workspace handling
         self.open_files = []
@@ -362,15 +363,15 @@ class MainWindow(QMainWindow):
     
     def _on_node_executing(self, node_id):
         if self.current_highlight:
-            self.canvas.set_node_highlight(self.current_highlight, False)
+            self.canvas.scene.set_node_highlight(self.current_highlight, False)
         
-        self.canvas.set_node_highlight(node_id, True)
+        self.canvas.scene.set_node_highlight(node_id, True)
         self.current_highlight = node_id
 
 
     def _on_execution_finished(self, success, message):
         if self.current_highlight:
-            self.canvas.set_node_highlight(self.current_highlight, False)
+            self.canvas.scene.set_node_highlight(self.current_highlight, False)
         
         self.console.write(message + "\n")
         self.executor = None

@@ -117,10 +117,11 @@ sys.exit(0 if len(node_errors) == 0 else 1)
     def _run_subprocess(self, script: str) -> tuple[bool, str]:
         self.python = self.venv_manager.get_python_path()
 
-        process = subprocess.Popen([self.python, '-c', script],
+        process = subprocess.Popen([self.python, '-u', '-c', script],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            bufsize=1,
             cwd=str(self.project_path)
         ) 
 
@@ -132,7 +133,8 @@ sys.exit(0 if len(node_errors) == 0 else 1)
             if line.startswith("__PYWORKS_EXEC_NODE__"):
                 node_id = line.strip().split(":")[1]
                 self.active_node_signal.emit(node_id)
-            self.output_signal.emit(line.rstrip())
+            else:
+                self.output_signal.emit(line.rstrip())
             output_lines.append(line.rstrip())
 
         process.wait()

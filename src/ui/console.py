@@ -11,4 +11,5 @@ class ConsoleWidget(QTextEdit):
 
     def write(self, message):
         self.append(message)
+        QApplication.processEvents()
         self.verticalScrollBar().setValue(self.verticalScrollBar().maximum())

@@ -117,7 +117,7 @@ class CanvasGraphicsScene(QGraphicsScene):
             item.nodeDoubleClicked.connect(self.nodeDoubleClicked.emit)
 
     def set_node_highlight(self, node_id: str, state: bool):
-        node_to_higlight = self.node_by_id.get(node_id)
+        node_to_higlight = self.nodes_by_id.get(node_id)
         if node_to_higlight:
             node_to_higlight.set_executing(state)
         

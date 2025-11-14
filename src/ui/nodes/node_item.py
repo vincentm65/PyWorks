@@ -20,6 +20,7 @@ class NodeItem(QGraphicsObject):
         self.add_ports()
         self.setAcceptHoverEvents(True)
         self.is_hovered = False
+        self.is_executing = False
         self.setToolTip(fqnn)
 
         # Center the node at the given position
@@ -31,6 +32,10 @@ class NodeItem(QGraphicsObject):
             QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
     
+    def set_executing(self, executing: bool):
+        self.is_executing = executing
+        self.update()
+
     def boundingRect(self):
         return QRectF(0, 0, self.width, self.height)
     
@@ -39,7 +44,19 @@ class NodeItem(QGraphicsObject):
 
         is_selected = option.state & QStyle.StateFlag.State_Selected
 
-        if self.is_hovered:
+        if self.is_executing:
+            glow_color = QColor(0, 255, 0, 150) # Green glow
+            glow_size = 5
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(glow_color)
+            painter.drawRoundedRect(
+                        -glow_size, -glow_size,
+                        self.width + glow_size * 2,
+                        self.height + glow_size * 2,
+                        radius + glow_size,
+                        radius + glow_size
+                    )
+        elif self.is_hovered:
             # Determine glow color
             if is_selected:
                 glow_color = QColor(66, 133, 244, 80)
