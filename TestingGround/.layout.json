@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "nodes": {
+    "5ab2f351c17c4794821a34ae6515c800": {
+      "fqnn": "example.receive_example",
+      "x": -60.0,
+      "y": -240.0
+    },
+    "b43ecaa9f160434cb046a4be569c651b": {
+      "fqnn": "example.send_example",
+      "x": -410.0,
+      "y": -320.0
+    }
+  },
+  "connections": [
+    {
+      "source_node_id": "b43ecaa9f160434cb046a4be569c651b",
+      "source_port_type": "FLOW",
+      "source_port_direction": "OUT",
+      "target_node_id": "5ab2f351c17c4794821a34ae6515c800",
+      "target_port_type": "FLOW",
+      "target_port_direction": "IN"
+    },
+    {
+      "source_node_id": "b43ecaa9f160434cb046a4be569c651b",
+      "source_port_type": "DATA",
+      "source_port_direction": "OUT",
+      "target_node_id": "5ab2f351c17c4794821a34ae6515c800",
+      "target_port_type": "DATA",
+      "target_port_direction": "IN"
+    }
+  ]
+}

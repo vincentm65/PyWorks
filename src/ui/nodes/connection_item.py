@@ -6,55 +6,71 @@ from ui.nodes.port import PortItem
 from ui.nodes.node_item import NodeItem
 
 class ConnectionBridge(QGraphicsPathItem):
-    def __init__(self, source_port, target_port, parent = None):
+    def __init__(self, source_port, target_port, parent=None):
         super().__init__(parent)
-
-        # Animation init
+        
+        # Store the original ports
+        self.source_port = source_port
+        self.target_port = target_port
+        
+        # Ensure source is OUT and target is IN
+        if source_port.port_direction == "IN":
+            source_port, target_port = target_port, source_port
+            
+        self.source_port = source_port
+        self.target_port = target_port
+        
+        # Store node keys
+        self.source_node_key = source_port.get_node_key()
+        self.target_node_key = target_port.get_node_key()
+        
+        # Animation setup
         self.offset = 1000
+        self.is_hovered = False
+        
+        # Set up the pen based on port type
+        if source_port.port_type == "FLOW":
+            self.pen_color = QColor(110, 110, 110)  # Gray for flow
+        else:  # DATA or other types
+            self.pen_color = QColor(138, 43, 226)  # BlueViolet for data
+            
+        self.pen = QPen(self.pen_color, 2)
+        self.pen.setDashPattern([5, 5])
+        self.pen.setDashOffset(float(self.offset))
+        self.pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        self.pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        self.setPen(self.pen)
+        
+        # Set up hover and selection
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsPathItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setZValue(-1)  # Ensure connections are below nodes
+        
+        # Start animation timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_animation)
         self.timer.start(30)
-
-        # Normalize ports
-        if source_port.port_direction == "IN":
-          source_port, target_port = target_port, source_port
-
-        self.source_port = source_port
-        self.target_port = target_port
-        self.setAcceptHoverEvents(True)
-        self.is_hovered = False
-        self.setFlag(QGraphicsPathItem.GraphicsItemFlag.ItemIsSelectable, True)
         
-        if source_port.port_type == "FLOW":
-            pen = QPen(QColor(110, 110, 110), 2)
-        elif source_port.port_type == "DATA":
-            pen = QPen(QColor(138, 43, 226), 2)
-
-        pen.setDashPattern([5, 5])
-        pen.setDashOffset(float(self.offset))
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-        self.setPen(pen)
-
-        self.setZValue(-1)
-
+        # Initial path update
         self.update_path()
-
-    def paint(self, painter, option, widget):
-
-        pen = QPen(self.pen())
+    
+    def paint(self, painter, option, widget=None):
+        # Update the dash offset for animation
+        pen = self.pen
         pen.setDashOffset(float(self.offset))
-        self.setPen(pen)
-
+        
+        # Handle selection and hover effects
         is_selected = option.state & QStyle.StateFlag.State_Selected
         if self.is_hovered or is_selected:
             if self.source_port.port_type == "FLOW":
-                glow_color = QColor(150, 150, 150, 100)
+                glow_color = QColor(150, 150, 150, 100)  # Gray glow for flow
             else:
-                glow_color = QColor(180, 100, 255, 120)
+                glow_color = QColor(180, 100, 255, 120)  # Purple glow for data
+                
             if is_selected:
-                glow_color = QColor(255, 255, 255, 60)
+                glow_color = QColor(255, 255, 255, 60)  # White glow when selected
 
+            # Draw glow effect
             glow_pen = QPen(glow_color, 6)
             glow_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             glow_pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
@@ -62,12 +78,16 @@ class ConnectionBridge(QGraphicsPathItem):
             painter.setPen(glow_pen)
             painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPath(self.path())
-            
+        
+        # Draw the main connection line
+        painter.setPen(pen)
+        painter.drawPath(self.path())
+        
+        # Clear the selected state to prevent default selection rendering
         option.state &= ~QStyle.StateFlag.State_Selected
-
-        super().paint(painter, option, widget)
-
-    def update_path(self,):
+        
+    def update_path(self):
+        """Update the path of the connection"""
         path = self.create_orthogonal_path()
         self.setPath(path)
 

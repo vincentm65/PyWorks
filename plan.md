@@ -427,27 +427,6 @@ Current graph structure:
 
 ---
 
-## Implementation Order
-
-### Phase 3 (Virtual Environment)
-1. Create `VenvManager` class (1 day)
-2. Create `PackageInstallThread` class (1 day)
-3. Wire up to project system and UI (0.5 days)
-4. Test venv creation and package installation (0.5 days)
-
-**Estimated Time:** 3 days
-
-### Phase 4 (Execution Engine)
-1. Create `GraphBuilder` class (1 day)
-2. Implement topological sort (0.5 days)
-3. Create `WorkflowExecutor` class (2 days)
-4. Wire up UI (Run button, signals, console) (1 day)
-5. Testing with vincent project (0.5 days)
-
-**Estimated Time:** 5 days
-
----
-
 ## Future Phases (Post-Execution)
 
 ### Phase 5: Visual Execution Feedback
@@ -468,22 +447,3 @@ Current graph structure:
 - Workflow optimization suggestions
 
 ---
-
-## Success Criteria
-
-**Phase 3 Complete When:**
-- ✓ Projects automatically create `.venv` folder
-- ✓ "Install Dependencies" menu item works
-- ✓ Console shows pip installation output
-- ✓ Status bar shows venv status
-- ✓ Script reload uses venv Python
-
-**Phase 4 Complete When:**
-- ✓ "Run Workflow" button executes graph
-- ✓ FLOW connections determine execution order
-- ✓ DATA connections pass data correctly
-- ✓ Cycle detection prevents invalid graphs
-- ✓ Console shows execution output
-- ✓ Errors are caught and displayed
-- ✓ `global_state` persists across nodes
-- ✓ vincent project executes successfully
