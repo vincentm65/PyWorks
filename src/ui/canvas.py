@@ -113,13 +113,13 @@ class CanvasGraphicsScene(QGraphicsScene):
         super().addItem(item)
         # Connect nodeDoubleClicked signal from NodeItem to scene signal
         if isinstance(item, NodeItem):
-            self.nodes_by_id[item.fqnn] = item
+            self.nodes_by_id[item.id] = item
             item.nodeDoubleClicked.connect(self.nodeDoubleClicked.emit)
 
     def set_node_highlight(self, node_id: str, state: bool):
-        node_to_higlight = self.nodes_by_id.get(node_id)
-        if node_to_higlight:
-            node_to_higlight.set_executing(state)
+        node_to_highlight = self.nodes_by_id.get(node_id)
+        if node_to_highlight:
+            node_to_highlight.set_executing(state)
         
     def drawBackground(self, painter, rect):
         path = QPainterPath()

@@ -1,4 +1,5 @@
 import sys
+import uuid
 from PyQt6.QtWidgets import QApplication, QMainWindow, QGraphicsItem, QGraphicsObject, QStyle
 from PyQt6.QtCore import QRectF, QMimeData, QPointF, Qt, pyqtSignal
 from PyQt6.QtGui import QPainter, QColor, QDrag, QPen, QBrush
@@ -9,11 +10,12 @@ class NodeItem(QGraphicsObject):
     # Signal emitted when node is double-clicked
     nodeDoubleClicked = pyqtSignal(str)  # Emits FQNN
 
-    def __init__(self, fqnn, x, y, parent=None):
+    def __init__(self, fqnn, x, y, id=None, parent=None):
         super().__init__(parent)
         # Node properties
         self.width = 140
         self.height = 80
+        self.id = id if id is not None else uuid.uuid4().hex
         self.fqnn = fqnn
         self.category = fqnn.split('.')[0]
         self.function_name = fqnn.split('.')[1]
@@ -46,7 +48,7 @@ class NodeItem(QGraphicsObject):
 
         if self.is_executing:
             glow_color = QColor(0, 255, 0, 150) # Green glow
-            glow_size = 5
+            glow_size = 3
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(glow_color)
             painter.drawRoundedRect(

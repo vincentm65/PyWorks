@@ -132,11 +132,7 @@ sys.exit(0 if len(node_errors) == 0 else 1)
         for line in process.stdout:
             if line.startswith("__PYWORKS_EXEC_NODE__"):
                 node_id = line.strip().split(":")[1]
-                # The node_id from the executor is a unique ID (e.g., fqnn_uuid).
-                # The canvas scene identifies nodes by their base fqnn.
-                # We need to extract the fqnn to send the correct ID to the UI.
-                node_fqnn = node_id.rsplit('_', 2)[0]
-                self.active_node_signal.emit(node_fqnn)
+                self.active_node_signal.emit(node_id)
             else:
                 self.output_signal.emit(line.rstrip())
             output_lines.append(line.rstrip())

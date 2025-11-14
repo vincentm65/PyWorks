@@ -20,40 +20,23 @@ class LayoutManager():
 
         for item in scene.items():
             if isinstance(item, NodeItem):
-                node_x = item.pos().x()
-                node_y = item.pos().y()
-
-                node_key = f"{item.fqnn}_{int(node_x)}_{int(node_y)}"
-
-                layout_data["nodes"][node_key] = {
-                    "category": item.category,
-                    "function": item.function_name,
-                    "x": node_x, 
-                    "y": node_y
+                layout_data["nodes"][item.id] = {
+                    "fqnn": item.fqnn,
+                    "x": item.pos().x(), 
+                    "y": item.pos().y()
                     }
 
         for connection in scene.connections:
-            source_node = connection.source_port.parent_node
-            source_type = connection.source_port.port_type
-            source_dir = connection.source_port.port_direction
-            source_x = int(source_node.pos().x())
-            source_y = int(source_node.pos().y())
-            source_key = f"{source_node.fqnn}_{source_x}_{source_y}"
-
-            target_node = connection.target_port.parent_node
-            target_type = connection.target_port.port_type
-            target_dir = connection.target_port.port_direction
-            target_x = int(target_node.pos().x())
-            target_y = int(target_node.pos().y())
-            target_key = f"{target_node.fqnn}_{target_x}_{target_y}"
+            source_node_id = connection.source_port.parent_node.id
+            target_node_id = connection.target_port.parent_node.id
 
             connection_data = {
-                "source_node_key": source_key,
-                "source_port_type": source_type,
-                "source_port_direction": source_dir,
-                "target_node_key": target_key,
-                "target_port_type": target_type,
-                "target_port_direction": target_dir
+                "source_node_id": source_node_id,
+                "source_port_type": connection.source_port.port_type,
+                "source_port_direction": connection.source_port.port_direction,
+                "target_node_id": target_node_id,
+                "target_port_type": connection.target_port.port_type,
+                "target_port_direction": connection.target_port.port_direction
             }
 
             layout_data["connections"].append(connection_data)
@@ -82,31 +65,36 @@ class LayoutManager():
         
         node_dict ={}
 
-        for node_key, position in layout_data["nodes"].items():
-            category = position["category"]
-            function = position["function"]
-            fqnn = f"{category}.{function}"
-            x = position["x"]
-            y = position["y"]
+        for node_id, node_data in layout_data["nodes"].items():
+            # Backward compatibility for old layout files
+            if "fqnn" in node_data:
+                fqnn = node_data["fqnn"]
+            else:
+                # Old format used category and function to build fqnn
+                fqnn = f"{node_data['category']}.{node_data['function']}"
 
-            node = NodeItem(fqnn, x, y)
+            x = node_data["x"]
+            y = node_data["y"]
+
+            node = NodeItem(fqnn, x, y, id=node_id)
             scene.addItem(node)
-            node_dict[node_key] = node
+            node_dict[node_id] = node
 
         source_port = None
 
         for connection_data in layout_data['connections']:
-            source_node_name = connection_data["source_node_key"]
-            target_node_name = connection_data["target_node_key"]
+            # Backward compatibility for old connection keys
+            source_node_id = connection_data.get("source_node_id") or connection_data.get("source_node_key")
+            target_node_id = connection_data.get("target_node_id") or connection_data.get("target_node_key")
 
-            source_node = node_dict.get(source_node_name)
-            target_node = node_dict.get(target_node_name)
+            source_node = node_dict.get(source_node_id)
+            target_node = node_dict.get(target_node_id)
 
             if source_node is None:
-                print(f"Warning: Source node '{source_node_name}' not found. Skipping connection.")
+                print(f"Warning: Source node '{source_node_id}' not found. Skipping connection.")
                 continue
             if target_node is None:
-                print(f"Warning: Target node '{target_node_name}' not found. Skipping connection.")
+                print(f"Warning: Target node '{target_node_id}' not found. Skipping connection.")
                 continue
 
             source_port = None
