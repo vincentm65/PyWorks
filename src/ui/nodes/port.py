@@ -9,7 +9,6 @@ class PortItem(QGraphicsItem):
         self.port_type = port_type
         self.port_direction = port_direction
         self.parent_node = parent_node
-        self._node_key = None  # Will store the parent node's key
 
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
@@ -45,18 +44,15 @@ class PortItem(QGraphicsItem):
         
 
     def get_center_pos(self):
-        """Get the center position of the port in scene coordinates"""
+        radius = 5
         self.center_pos = self.scenePos()
         return self.center_pos
-        
-    def get_node_key(self):
-        """Get the key of the parent node"""
-        if self._node_key is None and hasattr(self.parent_node, 'id'):
-            self._node_key = self.parent_node.id
-        return self._node_key
-        
+
     def can_connect_to(self, other_port):
-        """Check if this port can connect to another port"""
+        # Prevent connecting to self
+        if self is other_port:
+            return False
+        
         # Must have opposite directions
         if self.port_direction == other_port.port_direction:
             return False
@@ -65,10 +61,6 @@ class PortItem(QGraphicsItem):
         if self.port_type != other_port.port_type:
             return False
 
-        # Must be connecting to a different node
-        if self.get_node_key() == other_port.get_node_key():
-            return False
-            
         return True
 
 
