@@ -1,32 +1,71 @@
 {
   "version": "1.0",
   "nodes": {
-    "5ab2f351c17c4794821a34ae6515c800": {
-      "fqnn": "example.receive_example",
-      "x": -60.0,
-      "y": -240.0
+    "fa40beac8f3042fb964a87ce2ddede4a": {
+      "fqnn": "example.receive_global_example",
+      "x": 260.0,
+      "y": -80.0
     },
-    "b43ecaa9f160434cb046a4be569c651b": {
-      "fqnn": "example.send_example",
-      "x": -410.0,
-      "y": -320.0
+    "58daa87276f74afb885bd57594842b82": {
+      "fqnn": "example.receive_global_example",
+      "x": -380.0,
+      "y": -80.0
+    },
+    "475a06fc2d55464b91aa627ba6059c8e": {
+      "fqnn": "example.create_global_example",
+      "x": -600.0,
+      "y": -80.0
+    },
+    "ba1320dec2cf461e87b3e4db795e1e7e": {
+      "fqnn": "example.receive_local_example",
+      "x": 80.0,
+      "y": -360.0
+    },
+    "7a64a6fdbe0841458167f19a3a4d259a": {
+      "fqnn": "example.send_local_example",
+      "x": -160.0,
+      "y": -300.0
     }
   },
   "connections": [
     {
-      "source_node_id": "b43ecaa9f160434cb046a4be569c651b",
+      "source_node_id": "7a64a6fdbe0841458167f19a3a4d259a",
+      "source_port_type": "DATA",
+      "source_port_direction": "OUT",
+      "target_node_id": "ba1320dec2cf461e87b3e4db795e1e7e",
+      "target_port_type": "DATA",
+      "target_port_direction": "IN"
+    },
+    {
+      "source_node_id": "7a64a6fdbe0841458167f19a3a4d259a",
       "source_port_type": "FLOW",
       "source_port_direction": "OUT",
-      "target_node_id": "5ab2f351c17c4794821a34ae6515c800",
+      "target_node_id": "ba1320dec2cf461e87b3e4db795e1e7e",
       "target_port_type": "FLOW",
       "target_port_direction": "IN"
     },
     {
-      "source_node_id": "b43ecaa9f160434cb046a4be569c651b",
-      "source_port_type": "DATA",
+      "source_node_id": "475a06fc2d55464b91aa627ba6059c8e",
+      "source_port_type": "FLOW",
       "source_port_direction": "OUT",
-      "target_node_id": "5ab2f351c17c4794821a34ae6515c800",
-      "target_port_type": "DATA",
+      "target_node_id": "58daa87276f74afb885bd57594842b82",
+      "target_port_type": "FLOW",
+      "target_port_direction": "IN"
+    },
+    {
+      "source_node_id": "58daa87276f74afb885bd57594842b82",
+      "source_port_type": "FLOW",
+      "source_port_direction": "OUT",
+      "target_node_id": "7a64a6fdbe0841458167f19a3a4d259a",
+      "target_port_type": "FLOW",
+      "target_port_direction": "IN"
+    },
+    {
+      "source_node_id": "ba1320dec2cf461e87b3e4db795e1e7e",
+      "source_port_type": "FLOW",
+      "source_port_direction": "OUT",
+      "target_node_id": "fa40beac8f3042fb964a87ce2ddede4a",
+      "target_port_type": "FLOW",
       "target_port_direction": "IN"
     }
   ]
