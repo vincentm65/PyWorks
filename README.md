@@ -14,7 +14,7 @@ PyWorks is a visual workflow editor for Python. It allows you to create, connect
 ## Getting Started
 
 1. **Create a new project:**
-   - Launch PyWorks.
+   - Launch PyWorks. (PyWorks>Dist>main.exe)
    - Click "Create New Project" in the welcome dialog.
    - Enter a project name and select a location.
    - A new project will be created with an example workflow.
