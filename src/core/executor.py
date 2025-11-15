@@ -72,27 +72,35 @@ class WorkflowExecutor(QThread):
 
     def _generate_execution_script(self, sorted_nodes: list, data_graph: dict, flow_graph: dict) -> str:
         imports = self._build_imports()
+        nodes_dict = self.layout_data.get('nodes', {})
 
         node_code = []
 
         for node_key in sorted_nodes:
+            node_data = nodes_dict.get(node_key, {})
+            fqnn = node_data.get('fqnn')
+            if not fqnn:
+                continue
+
             code = f"print(f'__PYWORKS_EXEC_NODE__:{node_key}', flush=True)\n"
             code += "try:\n"
             code += "    inputs = {}\n"
             for parent_key, port in data_graph.get(node_key, []):
-                parent_name = parent_key.rsplit('_', 2)[0]
-                code += f"    inputs['{parent_name}'] = node_outputs.get('{parent_name}', {{}})\n"
+                parent_node_data = nodes_dict.get(parent_key, {})
+                parent_fqnn = parent_node_data.get('fqnn')
+                if not parent_fqnn:
+                    continue
+                code += f"    inputs['{parent_fqnn}'] = node_outputs.get('{parent_fqnn}', {{}})\n"
 
-            node_name = node_key.rsplit('_', 2)[0]
-            safe_name = node_name.replace('.', '_')
+            safe_name = fqnn.replace('.', '_')
 
             code += f"    result = {safe_name}(inputs, global_state)\n"
-            code += f"    node_outputs['{node_name}'] = result\n"
+            code += f"    node_outputs['{fqnn}'] = result\n"
             code += "except Exception as e:\n"
             code += "    import traceback\n"
             code += f"    tb = traceback.format_exc()\n"
-            code += f"    print(f'🔴 Error in {node_name}:', tb)\n"
-            code += f"    node_errors['{node_name}'] = str(e)\n"
+            code += f"    print(f'🔴 Error in {fqnn}:', tb)\n"
+            code += f"    node_errors['{fqnn}'] = str(e)\n"
 
             node_code.append(code)
 
