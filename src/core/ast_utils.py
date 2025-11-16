@@ -55,87 +55,77 @@ def extract_function_with_imports(file_path: Path, function_name: str) -> str:
         return ""
 
     import_lines = []
-    function_lines = []
+    function_string = None
 
     for node in tree.body:
         if isinstance(node, (ast.Import, ast.ImportFrom)):
+            # These will stay at the top when we reconstruct
             import_lines.append(ast.get_source_segment(file_content, node))
+
         elif isinstance(node, ast.FunctionDef) and node.name == function_name:
-            decorator_lines = []
-            for decorator in node.decorator_list:
-                decorator_segment = ast.get_source_segment(file_content, decorator)
-                decorator_lines.append(f"@{decorator_segment}")
-            
-            function_segment = ast.get_source_segment(file_content, node)
+            # Extract exact source (including its decorators)
+            function_string = ast.get_source_segment(file_content, node)
 
-            full_function = (
-                '\n'.join(decorator_lines) + '\n' + function_segment
-                if decorator_lines
-                else function_segment
-            )
-
-            function_lines.append(full_function)
-
-    if not function_lines:
+    if not function_string:
         return ""
 
-    combined_code = '\n'.join(import_lines + [''] + function_lines)
+    # Combine imports + function cleanly
+    combined_code = "\n".join(import_lines + ["", function_string])
     return combined_code
 
+def extract_only_function(new_code: str) -> str:
+    lines = new_code.splitlines()
+    start = None
+
+    # find the first decorator OR "def"
+    for i, line in enumerate(lines):
+        striped = line.strip()
+        if striped.startswith("@") or striped.startswith("def "):
+            start = i
+            break
+
+    if start is None:
+        return new_code  # fallback
+
+    return "\n".join(lines[start:])
+
+
 def replace_function_in_file(file_path: Path, function_name: str, new_code: str) -> bool:
-    with open(file_path, 'r', encoding='utf-8') as f:
-        original_content = f.read()
+    original_content = file_path.read_text(encoding="utf-8")
 
     try:
-        original_tree = ast.parse(original_content)
-        new_tree = ast.parse(new_code)
+        tree = ast.parse(original_content)
     except SyntaxError as e:
-        print(f"Syntax error: {e}")
-        return False
-    
-    new_imports = []
-    new_function = None
-
-    for node in new_tree.body:
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            new_imports.append(node)
-        elif isinstance(node, ast.FunctionDef) and node.name == function_name:
-            new_function = node
-    
-    if not new_function:
-          print(f"Function '{function_name}' not found in new code")
-          return False
-
-    # Merge imports and replace function in original tree
-    function_replaced = False
-    new_body = []
-
-    new_body.extend(new_imports)
-
-    for node in original_tree.body:
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            # Track existing imports to avoid duplicates
-            continue
-        elif isinstance(node, ast.FunctionDef) and node.name == function_name:
-            # Replace the target function
-            new_body.append(new_function)
-            function_replaced = True
-        else:
-            # Keep everything else (other functions, classes, etc.)
-            new_body.append(node)
-
-    if not function_replaced:
-        print(f"Function '{function_name}' not found in original file")
+        print(f"Syntax error in original file: {e}")
         return False
 
-    # Generate new source code
-    original_tree.body = new_body
-    new_source = ast.unparse(original_tree)
+    target_node = None
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == function_name:
+            target_node = node
+            break
 
-    # Write back to file
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(new_source)
+    if not target_node:
+        print(f"Function '{function_name}' not found in file")
+        return False
 
+    start_line = target_node.lineno
+    end_line = target_node.end_lineno
+
+    lines = original_content.splitlines(keepends=True)
+
+    # ⬅ Only keep decorators + def, not imports
+    function_only = extract_only_function(new_code)
+
+    # Replace exact slice
+    new_lines = (
+        lines[: start_line - 1]
+        + [function_only + ("\n" if not function_only.endswith("\n") else "")]
+        + lines[end_line :]
+    )
+
+    final_text = "".join(new_lines)
+    file_path.write_text(final_text, encoding="utf-8")
     return True
 
 def extract_function_signature(func_node: ast.FunctionDef) -> str:
@@ -145,35 +135,30 @@ def extract_function_signature(func_node: ast.FunctionDef) -> str:
     return f"({", ".join(func_node_args)})"
 
 def delete_function_from_file(file_path: Path, function_name: str) -> bool:
-    if not file_path.exists():
-        print(f"File not found: {file_path}")
-        return False
+    content = file_path.read_text(encoding="utf-8")
 
-    source = file_path.read_text(encoding="utf-8")
     try:
-        tree = ast.parse(source)
+        tree = ast.parse(content)
     except SyntaxError as e:
         print(f"Syntax error in {file_path}: {e}")
         return False
 
-    new_body = []
-    removed = False
-
+    target = None
     for node in tree.body:
-        # Skip the function we want to delete
         if isinstance(node, ast.FunctionDef) and node.name == function_name:
-            removed = True
-            continue
-        new_body.append(node)
+            target = node
+            break
 
-    if not removed:
+    if not target:
         print(f"Function '{function_name}' not found in {file_path}")
         return False
 
-    tree.body = new_body
-    new_code = ast.unparse(tree)
-    file_path.write_text(new_code, encoding="utf-8")
+    start = target.lineno
+    end = target.end_lineno
 
-    print(f"Deleted function '{function_name}' from {file_path}")
+    lines = content.splitlines(keepends=True)
+
+    new_text = "".join(lines[:start - 1] + lines[end:])
+
+    file_path.write_text(new_text, encoding="utf-8")
     return True
-

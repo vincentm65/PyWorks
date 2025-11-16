@@ -1,5 +1,5 @@
-import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTextEdit
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QTextEdit, QLineEdit, QApplication
+from PyQt6.QtCore import pyqtSignal
 
 
 class ConsoleWidget(QTextEdit):

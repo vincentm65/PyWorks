@@ -1,30 +1,30 @@
 {
   "version": "1.0",
   "nodes": {
-    "fa40beac8f3042fb964a87ce2ddede4a": {
-      "fqnn": "example.receive_global_example",
-      "x": 260.0,
-      "y": -80.0
-    },
-    "58daa87276f74afb885bd57594842b82": {
-      "fqnn": "example.receive_global_example",
-      "x": -380.0,
-      "y": -80.0
-    },
-    "475a06fc2d55464b91aa627ba6059c8e": {
-      "fqnn": "example.create_global_example",
-      "x": -600.0,
-      "y": -80.0
+    "7a64a6fdbe0841458167f19a3a4d259a": {
+      "fqnn": "example.send_local_example",
+      "x": -480.0,
+      "y": -500.0
     },
     "ba1320dec2cf461e87b3e4db795e1e7e": {
       "fqnn": "example.receive_local_example",
-      "x": 80.0,
-      "y": -360.0
+      "x": -270.0,
+      "y": -560.0
     },
-    "7a64a6fdbe0841458167f19a3a4d259a": {
-      "fqnn": "example.send_local_example",
-      "x": -160.0,
-      "y": -300.0
+    "475a06fc2d55464b91aa627ba6059c8e": {
+      "fqnn": "example.create_global_example",
+      "x": -860.0,
+      "y": -280.0
+    },
+    "58daa87276f74afb885bd57594842b82": {
+      "fqnn": "example.receive_global_example",
+      "x": -660.0,
+      "y": -280.0
+    },
+    "fa40beac8f3042fb964a87ce2ddede4a": {
+      "fqnn": "example.receive_global_example",
+      "x": -90.0,
+      "y": -280.0
     }
   },
   "connections": [

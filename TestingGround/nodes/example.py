@@ -9,11 +9,11 @@ def node(func):
 
 @node
 def send_local_example(inputs, global_state):
-    message = 'Hello World!'
+    message = 'Hello World'
     time.sleep(1)
 
     # We return "results" in this case as our key, that has message as our value.
-    return {'result': message}
+    return {'result': message} 
 
 @node
 def receive_local_example(inputs, global_state):
@@ -36,13 +36,13 @@ def create_global_example(inputs, global_state):
 
     # Here we set a standard variable
     this_is_global = "Global variable all nodes can read!"
-
+    import_text = input("Enter text: ")
     # Then it is made global by assingning it a new value in the global state dict. Now all nodes can access it.
-    global_state["Test_Global"] = this_is_global
+    global_state["Test_Global"] = import_text
     time.sleep(1)
 
-    # No need to return anything.
-    return {}
+    # No need to return anything
+    return {} 
 
 @node
 def receive_global_example(inputs, global_state):
