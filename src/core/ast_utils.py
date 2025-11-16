@@ -132,7 +132,7 @@ def extract_function_signature(func_node: ast.FunctionDef) -> str:
     func_node_args = []
     for item in func_node.args.args:
         func_node_args.append(item.arg)
-    return f"({", ".join(func_node_args)})"
+    return f"({', '.join(func_node_args)})"
 
 def delete_function_from_file(file_path: Path, function_name: str) -> bool:
     content = file_path.read_text(encoding="utf-8")

@@ -358,6 +358,8 @@ class MainWindow(QMainWindow):
         self.executor.status_signal.connect(self.status_bar.set_status)
         self.executor.finished_signal.connect(self._on_execution_finished)
         self.executor.active_node_signal.connect(self._on_node_executing)
+        self.executor.input_required.connect(self.console.request_input)
+        self.console.input_submitted.connect(self.executor.submit_input)
 
         self.executor.start()
     
@@ -451,6 +453,8 @@ class MainWindow(QMainWindow):
         print("Pause")
 
     def stop(self):
+        if self.executor:
+            self.executor.terminate_process()
         print("Stop")
 
 
